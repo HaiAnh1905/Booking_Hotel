@@ -1,0 +1,23 @@
+<Solution>
+    <Configurations>
+        <Platform Name="Any CPU" />
+    </Configurations>
+    <Folder Name="/src/">
+        <Project Path="src/BookingHotel.Domain/BookingHotel.Domain.csproj" />
+        <Project Path="src/BookingHotel.Application/BookingHotel.Application.csproj" />
+        <Project Path="src/BookingHotel.EntityFrameworkCore/BookingHotel.EntityFrameworkCore.csproj" />
+        <Project Path="src/BookingHotel.Domain.Shared/BookingHotel.Domain.Shared.csproj" />
+        <Project Path="src/BookingHotel.Application.Contracts/BookingHotel.Application.Contracts.csproj" />
+        <Project Path="src/BookingHotel.HttpApi/BookingHotel.HttpApi.csproj" />
+        <Project Path="src/BookingHotel.HttpApi.Client/BookingHotel.HttpApi.Client.csproj" />
+        <Project Path="src/BookingHotel.HttpApi.Host/BookingHotel.HttpApi.Host.csproj" />
+        <Project Path="src/BookingHotel.DbMigrator/BookingHotel.DbMigrator.csproj" />
+    </Folder>
+    <Folder Name="/test/">
+        <Project Path="test/BookingHotel.Application.Tests/BookingHotel.Application.Tests.csproj" />
+        <Project Path="test/BookingHotel.EntityFrameworkCore.Tests/BookingHotel.EntityFrameworkCore.Tests.csproj" />
+        <Project Path="test/BookingHotel.TestBase/BookingHotel.TestBase.csproj" />
+        <Project Path="test/BookingHotel.Domain.Tests/BookingHotel.Domain.Tests.csproj" />
+        <Project Path="test/BookingHotel.HttpApi.Client.ConsoleTestApp/BookingHotel.HttpApi.Client.ConsoleTestApp.csproj" />
+    </Folder>
+</Solution>
