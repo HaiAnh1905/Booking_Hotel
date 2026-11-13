@@ -9,7 +9,7 @@
               <p class="lead text-muted mb-2">
               {{ '::LongWelcomeMessage' | abpLocalization }}
               </p>
-              <a (click)="login()" class="btn btn-primary mb-4"><i class="fa-solid fa-right-to-bracket me-1"></i><span>{{ 'AbpAccount::Login' | abpLocalization }}</span></a>
+              <a (click)="login()" class="btn btn-primary mb-4"><i class="fa-solid fa-right-to-bracket me-1"></i><span>{{ '::Auth:Login' | abpLocalization }}</span></a>
             }
 
             <h4>Getting Started</h4>
@@ -24,12 +24,6 @@
             >
               Getting Started
             </a>
-
-            <h4>Web Application Development Tutorial</h4>
-            <p class="text-muted mb-2">
-              Learn how to build an ABP based web application named Acme.BookStore.
-            </p>
-            <a href="https://abp.io/docs/latest/tutorials/book-store" class="btn btn-primary soft mb-4" target="_blank">Explore Tutorial</a>
           </div>
           <img class="card-bg-image" src="assets/images/getting-started/bg-01.png" />
         </div>
@@ -163,24 +157,6 @@
                   </td>
                   <td class="text-end pe-0 opacity-50 align-middle">
                     <a href="https://abp.io/docs/latest/samples" target="_blank">
-                      <i class="bi bi-box-arrow-up-right text-dark fs-6"></i>
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="ps-0">
-                    <div class="d-flex align-items-center">
-                      <div
-                        class="rounded-circle me-2 flex-center bg-brand soft"
-                        style="width: 20px; height: 20px"
-                      >
-                        <i class="bi bi-check fs-4"></i>
-                      </div>
-                      <div>Books</div>
-                    </div>
-                  </td>
-                  <td class="text-end pe-0 opacity-50 align-middle">
-                    <a href="https://abp.io/books" target="_blank">
                       <i class="bi bi-box-arrow-up-right text-dark fs-6"></i>
                     </a>
                   </td>

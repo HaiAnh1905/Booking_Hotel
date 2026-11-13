@@ -15,13 +15,13 @@ alwaysApply: false
 Define permissions in `*.Application.Contracts` project:
 
 ```csharp
-public static class BookStorePermissions
+public static class BookingHotelPermissions
 {
-    public const string GroupName = "BookStore";
+    public const string GroupName = "BookingHotel";
 
-    public static class Books
+    public static class Rooms
     {
-        public const string Default = GroupName + ".Books";
+        public const string Default = GroupName + ".Rooms";
         public const string Create = Default + ".Create";
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
@@ -31,32 +31,32 @@ public static class BookStorePermissions
 
 Register in provider:
 ```csharp
-public class BookStorePermissionDefinitionProvider : PermissionDefinitionProvider
+public class BookingHotelPermissionDefinitionProvider : PermissionDefinitionProvider
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var bookStoreGroup = context.AddGroup(BookStorePermissions.GroupName, L("Permission:BookStore"));
+        var bookingHotelGroup = context.AddGroup(BookingHotelPermissions.GroupName, L("Permission:BookingHotel"));
 
-        var booksPermission = bookStoreGroup.AddPermission(
-            BookStorePermissions.Books.Default, 
-            L("Permission:Books"));
+        var roomsPermission = bookingHotelGroup.AddPermission(
+            BookingHotelPermissions.Rooms.Default, 
+            L("Permission:Rooms"));
         
-        booksPermission.AddChild(
-            BookStorePermissions.Books.Create, 
-            L("Permission:Books.Create"));
+        roomsPermission.AddChild(
+            BookingHotelPermissions.Rooms.Create, 
+            L("Permission:Rooms.Create"));
         
-        booksPermission.AddChild(
-            BookStorePermissions.Books.Edit, 
-            L("Permission:Books.Edit"));
+        roomsPermission.AddChild(
+            BookingHotelPermissions.Rooms.Edit, 
+            L("Permission:Rooms.Edit"));
         
-        booksPermission.AddChild(
-            BookStorePermissions.Books.Delete, 
-            L("Permission:Books.Delete"));
+        roomsPermission.AddChild(
+            BookingHotelPermissions.Rooms.Delete, 
+            L("Permission:Rooms.Delete"));
     }
 
     private static LocalizableString L(string name)
     {
-        return LocalizableString.Create<BookStoreResource>(name);
+        return LocalizableString.Create<BookingHotelResource>(name);
     }
 }
 ```
@@ -65,24 +65,24 @@ public class BookStorePermissionDefinitionProvider : PermissionDefinitionProvide
 
 ### Declarative (Attribute)
 ```csharp
-[Authorize(BookStorePermissions.Books.Create)]
-public virtual async Task<BookDto> CreateAsync(CreateBookDto input)
+[Authorize(BookingHotelPermissions.Rooms.Create)]
+public virtual async Task<RoomDto> CreateAsync(CreateRoomDto input)
 {
-    // Only users with Books.Create permission can execute
+    // Only users with Rooms.Create permission can execute
 }
 ```
 
 ### Programmatic Check
 ```csharp
-public class BookAppService : ApplicationService
+public class RoomAppService : ApplicationService
 {
     public async Task DoSomethingAsync()
     {
         // Check and throw if not granted
-        await CheckPolicyAsync(BookStorePermissions.Books.Edit);
+        await CheckPolicyAsync(BookingHotelPermissions.Rooms.Edit);
         
         // Or check without throwing
-        if (await IsGrantedAsync(BookStorePermissions.Books.Delete))
+        if (await IsGrantedAsync(BookingHotelPermissions.Rooms.Delete))
         {
             // Has permission
         }
@@ -144,9 +144,9 @@ public async Task UpdateMyBookAsync(Guid bookId, UpdateBookDto input)
 Control permission availability per tenant side:
 
 ```csharp
-bookStoreGroup.AddPermission(
-    BookStorePermissions.Books.Default,
-    L("Permission:Books"),
+bookingHotelGroup.AddPermission(
+    BookingHotelPermissions.Rooms.Default,
+    L("Permission:Rooms"),
     multiTenancySide: MultiTenancySides.Tenant // Only for tenants
 );
 ```
@@ -155,7 +155,7 @@ Options: `MultiTenancySides.Host`, `Tenant`, or `Both`
 
 ## Feature-Dependent Permissions
 ```csharp
-booksPermission.RequireFeatures("BookStore.PremiumFeature");
+roomsPermission.RequireFeatures("BookingHotel.PremiumFeature");
 ```
 
 ## Permission Management

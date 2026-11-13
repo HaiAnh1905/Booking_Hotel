@@ -1,5 +1,6 @@
-import { provideAbpCore, withOptions } from '@abp/ng.core';
-import { provideAbpOAuth } from '@abp/ng.oauth';
+import { AuthService, provideAbpCore, withOptions } from '@abp/ng.core';
+import { BrowserTokenStorageService, provideAbpOAuth } from '@abp/ng.oauth';
+import { OAuthStorage } from 'angular-oauth2-oidc';
 import { provideSettingManagementConfig } from '@abp/ng.setting-management/config';
 import { provideFeatureManagementConfig } from '@abp/ng.feature-management';
 import { provideAbpThemeShared,} from '@abp/ng.theme.shared';
@@ -17,6 +18,7 @@ import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 import { APP_ROUTE_PROVIDER } from './route.provider';
 import { FOOTER_PROVIDER } from './footer/footer.config';
+import { CustomAuthService } from './auth/services/custom-auth.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,6 +33,14 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     provideAbpOAuth(),
+    {
+      provide: OAuthStorage,
+      useExisting: BrowserTokenStorageService,
+    },
+    {
+      provide: AuthService,
+      useClass: CustomAuthService,
+    },
     provideIdentityConfig(),
     provideSettingManagementConfig(),
     provideFeatureManagementConfig(),
