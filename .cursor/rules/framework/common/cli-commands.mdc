@@ -40,15 +40,15 @@ abp install-libs
 
 ```bash
 # Add project reference with module dependency
-abp add-package-ref Acme.BookStore.Domain
-abp add-package-ref Acme.BookStore.Domain -t Acme.BookStore.Application
+abp add-package-ref BookingHotel.Domain
+abp add-package-ref BookingHotel.Domain -t BookingHotel.Application
 ```
 
 ## Module Operations
 
 ```bash
 # Create new module in solution
-abp new-module Acme.OrderManagement -t module:ddd
+abp new-module BookingHotel.OrderManagement -t module:ddd
 
 # Install published module
 abp install-module Volo.Blogging
@@ -70,7 +70,7 @@ abp clean                   # Delete bin/obj folders
 Generate CRUD pages from entity JSON (created via Suite UI):
 
 ```bash
-abp suite generate --entity .suite/entities/Book.json --solution ./Acme.BookStore.sln
+abp suite generate --entity .suite/entities/Room.json --solution ./BookingHotel.slnx
 ```
 
 > **Note**: Entity JSON files are created when you generate an entity via ABP Suite UI. They are stored in `.suite/entities/` folder.

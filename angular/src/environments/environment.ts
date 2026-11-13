@@ -15,8 +15,10 @@ export const environment = {
   production: false,
   application: {
     baseUrl,
-    name: 'BookingHotel',
+    name: 'Booking Hotel',
   },
+  googleClientId: '320980084490-6m666292h4ioh7vlvd126t240og4ujsc.apps.googleusercontent.com',
+  turnstileSiteKey: '1x00000000000000000000AA',
   oAuthConfig,
   apis: {
     default: {

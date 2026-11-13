@@ -14,6 +14,7 @@ using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using BookingHotel.Identity;
 
 namespace BookingHotel.EntityFrameworkCore;
 
@@ -26,6 +27,7 @@ public class BookingHotelDbContext :
     IIdentityDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
+    public DbSet<UserHotelAssignment> UserHotelAssignments { get; set; }
 
 
     #region Entities from the modules
@@ -81,11 +83,19 @@ public class BookingHotelDbContext :
 
         /* Configure your own tables/entities inside here */
 
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(BookingHotelConsts.DbTablePrefix + "YourEntities", BookingHotelConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
+        builder.Entity<UserHotelAssignment>(b =>
+        {
+            b.ToTable(BookingHotelConsts.DbTablePrefix + "UserHotelAssignments", BookingHotelConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.UserId).IsRequired();
+            b.Property(x => x.HotelId).IsRequired();
+            b.Property(x => x.AssignedDate).IsRequired();
+            b.Property(x => x.IsPrimary).IsRequired().HasDefaultValue(true);
+
+            b.HasIndex(x => new { x.TenantId, x.UserId, x.HotelId }).IsUnique();
+            b.HasIndex(x => new { x.TenantId, x.UserId });
+            b.HasIndex(x => new { x.TenantId, x.HotelId });
+        });
     }
 }

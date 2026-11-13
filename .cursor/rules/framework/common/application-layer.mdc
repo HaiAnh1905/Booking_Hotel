@@ -50,7 +50,7 @@ public class BookAppService : ApplicationService, IBookAppService
         return _bookMapper.MapToDto(book);
     }
 
-    [Authorize(BookStorePermissions.Books.Create)]
+    [Authorize(BookingHotelPermissions.Rooms.Create)]
     public async Task<BookDto> CreateAsync(CreateBookDto input)
     {
         var book = await _bookManager.CreateAsync(input.Name, input.Price);
@@ -58,7 +58,7 @@ public class BookAppService : ApplicationService, IBookAppService
         return _bookMapper.MapToDto(book);
     }
 
-    [Authorize(BookStorePermissions.Books.Edit)]
+    [Authorize(BookingHotelPermissions.Rooms.Edit)]
     public async Task<BookDto> UpdateAsync(Guid id, UpdateBookDto input)
     {
         var book = await _bookRepository.GetAsync(id);
@@ -152,7 +152,7 @@ public class CreateBookDtoValidator : AbstractValidator<CreateBookDto>
 
 ### Business Exceptions
 ```csharp
-throw new BusinessException("BookStore:010001")
+throw new BusinessException("BookingHotel:010001")
     .WithData("BookName", name);
 ```
 

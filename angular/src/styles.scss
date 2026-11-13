@@ -38,3 +38,37 @@
     background-image: url('assets/images/getting-started/x.svg');
   }
 }
+
+/* =========================================================================
+   LOẠI BỎ HOÀN TOÀN SIDEBAR LEPTONX KHỎI TOÀN BỘ HỆ THỐNG (Theo RM-003 & Hiến pháp)
+   ========================================================================= */
+.lpx-sidebar-container,
+.lpx-sidebar,
+.lpx-mobile-navbar,
+.menu-collapse-icon,
+.lpx-logo-container {
+  display: none !important;
+}
+
+#lpx-wrapper,
+#lpx-wrapper.hover-trigger {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+
+  .lpx-content-container {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+  }
+
+  .lpx-footbar-container {
+    left: 0 !important;
+    width: 100% !important;
+  }
+
+  .lpx-topbar-container {
+    left: 0 !important;
+    width: 100% !important;
+  }
+}

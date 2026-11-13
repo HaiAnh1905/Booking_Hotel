@@ -7,9 +7,16 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
   },
   {
-    path: 'account',
-    loadChildren: () => import('@abp/ng.account').then(c => c.createRoutes()),
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.routes').then(m => m.AUTH_ROUTES),
+    data: {
+      layout: 'empty',
+    },
   },
+  { path: 'account/login', redirectTo: 'auth/login', pathMatch: 'full' },
+  { path: 'account/register', redirectTo: 'auth/register', pathMatch: 'full' },
+  { path: 'account/forgot-password', redirectTo: 'auth/forgot-password', pathMatch: 'full' },
+  { path: 'account/reset-password', redirectTo: 'auth/reset-password', pathMatch: 'full' },
   {
     path: 'identity',
     loadChildren: () => import('@abp/ng.identity').then(c => c.createRoutes()),

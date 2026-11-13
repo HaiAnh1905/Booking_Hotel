@@ -98,7 +98,7 @@ getText(): string {
 
 ### Permission Directive
 ```html
-<button *abpPermission="'BookStore.Books.Create'">Create</button>
+<button *abpPermission="'BookingHotel.Rooms.Create'">Create</button>
 ```
 
 ### Permission Guard
@@ -106,10 +106,10 @@ getText(): string {
 const routes: Routes = [
   {
     path: '',
-    component: BookListComponent,
+    component: RoomListComponent,
     canActivate: [PermissionGuard],
     data: {
-      requiredPolicy: 'BookStore.Books'
+      requiredPolicy: 'BookingHotel.Rooms'
     }
   }
 ];
@@ -120,7 +120,7 @@ const routes: Routes = [
 constructor(private permissionService: PermissionService) {}
 
 canCreate(): boolean {
-  return this.permissionService.getGrantedPolicy('BookStore.Books.Create');
+  return this.permissionService.getGrantedPolicy('BookingHotel.Rooms.Create');
 }
 ```
 
