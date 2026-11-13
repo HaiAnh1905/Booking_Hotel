@@ -1,0 +1,85 @@
+.bh-lang-dropdown {
+  position: relative;
+  display: inline-block;
+
+  .bh-lang-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: var(--bh-radius-md);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    color: inherit;
+    cursor: pointer;
+    transition: all var(--bh-transition-speed);
+
+    &:hover, &:focus {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: rgba(0, 0, 0, 0.25);
+    }
+
+    .flag-icon {
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
+    .lang-code {
+      font-family: var(--bh-font-sans);
+      letter-spacing: 0.05em;
+    }
+  }
+
+  .bh-lang-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1050;
+    min-width: 160px;
+    margin-top: 0.35rem;
+    padding: 0.35rem 0;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--bh-radius-md);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12);
+
+    .bh-lang-item {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: #333333;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: background-color var(--bh-transition-speed);
+
+      &:hover {
+        background-color: #f8f9fa;
+        color: var(--bh-brand-red);
+      }
+
+      &.active {
+        background-color: var(--bh-brand-red-subtle);
+        color: var(--bh-brand-red);
+        font-weight: 600;
+      }
+
+      .flag-icon {
+        font-size: 1.1rem;
+      }
+    }
+  }
+}
+
+/* Biến thể hiển thị trên nền tối hoặc Sidebar */
+:host-context(.on-dark), :host-context(.bh-mgmt-topbar) {
+  .bh-lang-btn {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+
+    &:hover, &:focus {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}

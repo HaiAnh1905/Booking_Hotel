@@ -18,6 +18,7 @@ import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 import { APP_ROUTE_PROVIDER } from './route.provider';
 import { FOOTER_PROVIDER } from './footer/footer.config';
+import { LAYOUT_PROVIDER } from './layout/layout.config';
 import { CustomAuthService } from './auth/services/custom-auth.service';
 
 export const appConfig: ApplicationConfig = {
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(APP_ROUTES),
     APP_ROUTE_PROVIDER,
     FOOTER_PROVIDER,
+    LAYOUT_PROVIDER,
     provideAnimations(),
     provideAbpCore(
       withOptions({

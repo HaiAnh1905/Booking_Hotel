@@ -1,0 +1,105 @@
+.bh-room-rack-page {
+  .status-summary-badges {
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--bh-radius-full);
+      font-size: 0.825rem;
+      background-color: #ffffff;
+      border: 1px solid var(--bh-mgmt-border);
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 0.4rem;
+      }
+
+      &.stat-avail .dot { background-color: var(--bh-frontdesk-primary); }
+      &.stat-dirty .dot { background-color: var(--bh-frontdesk-secondary); }
+      &.stat-occ .dot { background-color: var(--bh-brand-red); }
+      &.stat-maint .dot { background-color: #ffa500; }
+    }
+  }
+
+  .btn-filter {
+    border: 1px solid var(--bh-mgmt-border);
+    background-color: #ffffff;
+    color: #555555;
+    font-weight: 500;
+    transition: all var(--bh-transition-speed);
+
+    &:hover {
+      background-color: #f1f3f5;
+    }
+
+    &.active {
+      background-color: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      font-weight: 700;
+    }
+
+    &.filter-available.active {
+      background-color: var(--bh-frontdesk-primary);
+      color: var(--bh-frontdesk-primary-contrast);
+      border-color: var(--bh-frontdesk-primary);
+    }
+
+    &.filter-dirty.active {
+      background-color: var(--bh-frontdesk-secondary);
+      color: var(--bh-frontdesk-secondary-contrast);
+      border-color: var(--bh-frontdesk-secondary);
+    }
+
+    &.filter-occupied.active {
+      background-color: var(--bh-brand-red);
+      color: #ffffff;
+      border-color: var(--bh-brand-red);
+    }
+
+    &.filter-maintenance.active {
+      background-color: #ffa500;
+      color: #000000;
+      border-color: #ffa500;
+    }
+  }
+
+  /* Room Card */
+  .room-rack-card {
+    transition: all var(--bh-transition-speed);
+    background-color: #ffffff;
+
+    .room-number {
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      color: #111111;
+    }
+
+    .very-small {
+      font-size: 0.725rem;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Viền trạng thái đặc trưng */
+    &.status-available {
+      border-top: 4px solid var(--bh-frontdesk-primary) !important;
+    }
+    &.status-dirty {
+      border-top: 4px solid var(--bh-frontdesk-secondary) !important;
+      background-color: #fafafa;
+    }
+    &.status-occupied {
+      border-top: 4px solid var(--bh-brand-red) !important;
+    }
+    &.status-maintenance {
+      border-top: 4px solid #ffa500 !important;
+      background-color: #fffdf5;
+    }
+  }
+}

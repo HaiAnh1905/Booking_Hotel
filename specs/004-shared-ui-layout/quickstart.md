@@ -91,3 +91,4 @@ npm start
    - Phòng Bảo trì (`Maintenance`): Huy hiệu màu Vàng cam `#FFA500` với chữ Đen `#000000`.
 3. **Thử nghiệm Bộ lọc**:
    - Bấm lọc "Tất cả", "Phòng sạch", "Phòng bẩn", "Có khách" $\rightarrow$ Danh sách thẻ phòng lọc mượt mà theo trạng thái.
+

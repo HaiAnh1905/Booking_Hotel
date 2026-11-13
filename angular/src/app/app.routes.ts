@@ -1,10 +1,20 @@
-import { authGuard, permissionGuard } from '@abp/ng.core';
 import { Routes } from '@angular/router';
+import { CustomerLayoutComponent } from './layout/customer/customer-layout.component';
+
 export const APP_ROUTES: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
+    component: CustomerLayoutComponent,
+    data: {
+      layout: 'empty',
+    },
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
+      },
+    ],
   },
   {
     path: 'auth',
@@ -17,6 +27,10 @@ export const APP_ROUTES: Routes = [
   { path: 'account/register', redirectTo: 'auth/register', pathMatch: 'full' },
   { path: 'account/forgot-password', redirectTo: 'auth/forgot-password', pathMatch: 'full' },
   { path: 'account/reset-password', redirectTo: 'auth/reset-password', pathMatch: 'full' },
+  {
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES),
+  },
   {
     path: 'identity',
     loadChildren: () => import('@abp/ng.identity').then(c => c.createRoutes()),

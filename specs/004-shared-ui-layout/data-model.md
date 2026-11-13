@@ -266,3 +266,4 @@ Tất cả các khóa giao diện dùng chung tuân thủ cấu trúc tiền t�
 - `::Landing:*` (Các nhãn cổng đặt phòng khách hàng)
 
 Hai tệp `vi.json` và `en.json` phải có 100% khóa đối ứng khớp nhau chính xác.
+

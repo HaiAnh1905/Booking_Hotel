@@ -1,0 +1,47 @@
+.bh-spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+
+  &.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 9998;
+    backdrop-filter: blur(2px);
+  }
+
+  .bh-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: var(--bh-brand-red);
+    border-radius: 50%;
+    animation: bhSpin 0.8s linear infinite;
+  }
+
+  .bh-spinner-text {
+    font-size: 0.875rem;
+    color: #555555;
+    font-weight: 500;
+  }
+
+  &.variant-accent .bh-spinner {
+    border-top-color: var(--bh-mgmt-accent);
+  }
+
+  &.variant-default .bh-spinner {
+    border-top-color: #333333;
+  }
+}
+
+@keyframes bhSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

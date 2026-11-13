@@ -1,0 +1,103 @@
+.bh-toastr-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+  max-width: 400px;
+  width: calc(100% - 3rem);
+
+  .bh-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    padding: 0.85rem 1.15rem;
+    border-radius: var(--bh-radius-md);
+    background-color: #ffffff;
+    border-left: 5px solid transparent;
+    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.15);
+    animation: bhToastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all var(--bh-transition-speed);
+
+    .bh-toast-icon {
+      font-size: 1.25rem;
+      margin-right: 0.85rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .bh-toast-content {
+      flex-grow: 1;
+
+      .bh-toast-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+        color: #111111;
+      }
+
+      .bh-toast-message {
+        font-size: 0.825rem;
+        color: #555555;
+        line-height: 1.4;
+      }
+    }
+
+    .bh-toast-close {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-left: 0.75rem;
+      color: #999999;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: color var(--bh-transition-speed);
+
+      &:hover {
+        color: #333333;
+      }
+    }
+
+    /* Các kiểu dáng phân loại */
+    &.bh-toast-success {
+      border-left-color: #198754;
+      .bh-toast-icon {
+        color: #198754;
+      }
+    }
+
+    &.bh-toast-error {
+      border-left-color: var(--bh-brand-red);
+      .bh-toast-icon {
+        color: var(--bh-brand-red);
+      }
+    }
+
+    &.bh-toast-warning {
+      border-left-color: #fd7e14;
+      .bh-toast-icon {
+        color: #fd7e14;
+      }
+    }
+
+    &.bh-toast-info {
+      border-left-color: #0dcaf0;
+      .bh-toast-icon {
+        color: #0dcaf0;
+      }
+    }
+  }
+}
+
+@keyframes bhToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

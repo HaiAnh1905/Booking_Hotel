@@ -1,0 +1,30 @@
+.bh-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+
+  .bh-empty-icon {
+    font-size: 3rem;
+    color: #cccccc;
+    transition: transform var(--bh-transition-speed);
+  }
+
+  .bh-empty-title {
+    color: #333333;
+    font-size: 1.15rem;
+  }
+
+  .bh-empty-desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  &:hover {
+    .bh-empty-icon {
+      transform: scale(1.08);
+      color: var(--bh-brand-red);
+    }
+  }
+}

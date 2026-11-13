@@ -141,3 +141,4 @@ Logo hệ thống **`Booking Hotel`** tuân thủ cấu trúc HTML & SCSS:
 | Huy hiệu Phòng Bẩn | `#808080` | `#FFFFFF` | **$3.95 : 1$** | $\ge 3.0:1$ (UI/Large) | **ĐẠT (AA)** |
 | Huy hiệu Phòng Đang Ở | `#990000` | `#FFFFFF` | **$7.60 : 1$** | $\ge 4.5:1$ | **ĐẠT (AAA)** |
 | Huy hiệu Bảo Trì | `#FFA500` | `#000000` | **$10.1 : 1$** | $\ge 4.5:1$ | **ĐẠT (AAA)** |
+

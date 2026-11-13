@@ -1,0 +1,65 @@
+.bh-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.775rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border-radius: var(--bh-radius-full);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: all var(--bh-transition-speed);
+
+  .dot-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+    background-color: currentColor;
+  }
+
+  /* --- Phân hệ Lễ tân: Room Rack Badges --- */
+  &.bh-badge-available {
+    background-color: var(--bh-status-available-bg);
+    color: var(--bh-status-available-text); /* Đen: 15.4:1 contrast */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  &.bh-badge-dirty {
+    background-color: var(--bh-status-dirty-bg);
+    color: var(--bh-status-dirty-text); /* Trắng */
+    text-transform: uppercase;
+  }
+
+  &.bh-badge-occupied {
+    background-color: var(--bh-status-occupied-bg);
+    color: var(--bh-status-occupied-text); /* Trắng: 7.6:1 contrast */
+  }
+
+  &.bh-badge-maintenance {
+    background-color: var(--bh-status-maintenance-bg);
+    color: var(--bh-status-maintenance-text); /* Đen: 10.1:1 contrast */
+  }
+
+  /* --- Trạng thái nghiệp vụ chung --- */
+  &.bh-badge-active {
+    background-color: #d1e7dd;
+    color: #0f5132;
+  }
+
+  &.bh-badge-inactive {
+    background-color: #e2e3e5;
+    color: #41464b;
+  }
+
+  &.bh-badge-locked {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  &.bh-badge-pending {
+    background-color: #fff3cd;
+    color: #664d03;
+  }
+}

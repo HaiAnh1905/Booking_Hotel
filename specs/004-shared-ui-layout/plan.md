@@ -189,3 +189,4 @@ BookingHotel/
 5. **Giai đoạn 5 (Verification & Quality Gate)**:
    - Chạy `npm run build` xác nhận không có lỗi cú pháp hay thiếu import.
    - Kiểm thử thực tế các kịch bản người dùng (User Story 1 $\rightarrow$ 5) theo `quickstart.md`.
+
