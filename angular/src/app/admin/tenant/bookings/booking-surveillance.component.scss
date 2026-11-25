@@ -1,0 +1,127 @@
+.surveillance-page {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .page-title {
+      font-size: 1.625rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 0.25rem 0;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+    }
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+      }
+
+      .search-input {
+        padding-left: 2.5rem;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+      }
+    }
+
+    .hotel-filter,
+    .status-filter,
+    .payment-filter {
+      min-width: 180px;
+      .form-select {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+      }
+    }
+  }
+
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    .surveillance-table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.875rem;
+      }
+
+      tr:hover {
+        background-color: #f8fafc;
+      }
+
+      .booking-code-badge {
+        font-family: monospace;
+        font-weight: 700;
+        background: #eff6ff;
+        color: #2563eb;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+      }
+
+      .status-pill {
+        display: inline-block;
+        padding: 0.25rem 0.625rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+
+        &.badge-primary {
+          background: #eff6ff;
+          color: #2563eb;
+        }
+
+        &.badge-success {
+          background: #dcfce7;
+          color: #15803d;
+        }
+      }
+    }
+  }
+}

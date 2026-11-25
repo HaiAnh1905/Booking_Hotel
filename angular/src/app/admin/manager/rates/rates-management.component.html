@@ -1,0 +1,385 @@
+<div class="rates-management-page">
+  <!-- SECTION 1: Header, Property Context, Room Type Selector & KPI Summary -->
+  <div class="page-header-card mb-4">
+    <div class="header-top">
+      <div>
+        <div class="property-tag-row mb-1">
+          <span class="active-badge">
+            <i class="fa-solid fa-hotel me-1"></i>
+            {{ pricingContext()?.hotelName || propertyService.currentHotel()?.name }}
+          </span>
+          <span class="code-badge">
+            {{ pricingContext()?.hotelCode || propertyService.currentHotel()?.code }}
+          </span>
+        </div>
+        <h1 class="page-title mb-1">{{ 'Manager:Rates:PageTitle' | abpLocalization }}</h1>
+        <p class="page-subtitle mb-0">{{ 'Manager:Rates:Subtitle' | abpLocalization }}</p>
+      </div>
+
+      <div class="header-actions">
+        <div class="room-type-picker">
+          <label class="picker-label">
+            {{ 'Manager:Room:Type' | abpLocalization }} <span class="text-danger">*</span>
+          </label>
+          <bh-searchable-select
+            class="room-type-select"
+            [ngModel]="selectedRoomTypeId()"
+            (ngModelChange)="onRoomTypeChange($event)"
+            [options]="roomTypeOptions()"
+            [placeholder]="roomTypes().length === 0 ? ('Manager:Room:NoRoomTypesAvailable' | abpLocalization) : ('Manager:Room:SelectRoomType' | abpLocalization)"
+            [emptyText]="'Manager:Room:NoRoomTypesAvailable' | abpLocalization"
+            [clearable]="false"
+            [searchable]="roomTypes().length > 5"
+          ></bh-searchable-select>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-dark text-info fw-semibold audit-btn"
+          [disabled]="!propertyService.currentHotelId()"
+          (click)="auditDrawerOpen.set(true)"
+        >
+          <i class="fa-solid fa-clock-rotate-left me-2"></i>
+          {{ 'Manager:Rates:AuditLogButton' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+
+    @if (pricingContext(); as ctx) {
+      <div class="kpi-strip mt-3">
+        <div class="kpi-tile">
+          <span class="kpi-label">{{ 'Manager:Rates:KpiReferenceBasePrice' | abpLocalization }}</span>
+          <span class="kpi-value">{{ ctx.referenceBasePrice | number: '1.0-0' }} VNĐ</span>
+        </div>
+        <div class="kpi-tile">
+          <span class="kpi-label">{{ 'Manager:Rates:KpiRatePlanCount' | abpLocalization }}</span>
+          <span class="kpi-value">
+            {{ ctx.ratePlanCount }}
+            <span class="kpi-sub">({{ ctx.activeRatePlanCount }} {{ 'Manager:Rates:KpiActiveRatePlans' | abpLocalization }})</span>
+          </span>
+        </div>
+        <div class="kpi-tile accent">
+          <span class="kpi-label">{{ 'Manager:Rates:KpiOverrideCount' | abpLocalization }}</span>
+          <span class="kpi-value">{{ ctx.activeOverrideCount }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (isLoadingContext() && !pricingContext()) {
+    <div class="py-5 text-center text-muted">
+      <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+      <p class="mb-0">{{ 'Common:Loading' | abpLocalization }}</p>
+    </div>
+  } @else if (roomTypes().length === 0) {
+    <bh-empty-state
+      iconClass="fa-solid fa-bed"
+      titleKey="Manager:Room:NoRoomTypesAvailable"
+      descriptionKey="Manager:Room:PleaseCreateRoomTypeFirst"
+    ></bh-empty-state>
+  } @else {
+    <!-- SECTION 2: Rate Plan Management -->
+    <div class="section-card mb-4">
+      <div class="section-header mb-3">
+        <div>
+          <h2 class="section-title mb-0">
+            <i class="fa-solid fa-tags me-2"></i>
+            {{ 'Manager:Rates:SectionRatePlans' | abpLocalization }}
+          </h2>
+          <p class="small text-muted mb-0 mt-1">{{ 'Manager:Rates:TogglePrompt' | abpLocalization }}</p>
+        </div>
+      </div>
+
+      @if (ratePlans().length === 0) {
+        <bh-empty-state
+          iconClass="fa-solid fa-tags"
+          titleKey="Manager:Rates:EmptyRatePlansTitle"
+          descriptionKey="Manager:Rates:EmptyRatePlansDesc"
+        ></bh-empty-state>
+      } @else {
+        <div class="table-responsive table-shell">
+          <table class="table table-hover align-middle mb-0 rate-plan-table">
+            <thead>
+              <tr>
+                <th class="col-plan">{{ 'Manager:Rates:ColPlanName' | abpLocalization }}</th>
+                <th class="col-policies">{{ 'Manager:Rates:ColPolicies' | abpLocalization }}</th>
+                <th class="text-end text-nowrap">{{ 'Manager:Rates:ColBasePriceShort' | abpLocalization }}</th>
+                <th class="text-end text-nowrap">{{ 'Manager:Rates:ColEffectivePriceShort' | abpLocalization }}</th>
+                <th class="text-center text-nowrap">{{ 'Manager:Rates:ColStatus' | abpLocalization }}</th>
+                <th class="text-center text-nowrap col-actions">{{ 'Manager:Rates:ColActions' | abpLocalization }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of ratePlans(); track p.ratePlanId) {
+                <tr
+                  class="plan-row"
+                  [class.selected-row]="selectedRatePlanId() === p.ratePlanId"
+                  [class.inactive-row]="!p.isActive"
+                  (click)="onSelectRatePlan(p.ratePlanId)"
+                >
+                  <td class="col-plan">
+                    <div class="plan-name-line">
+                      <span class="plan-name">{{ p.name }}</span>
+                      @if (selectedRatePlanId() === p.ratePlanId) {
+                        <span class="selected-pill">{{ 'Manager:Rates:SelectedBadge' | abpLocalization }}</span>
+                      }
+                    </div>
+                    <div class="plan-sub-line">
+                      <span class="code-chip">{{ p.code }}</span>
+                      @if (p.description) {
+                        <span class="plan-desc" [title]="p.description">{{ p.description }}</span>
+                      }
+                    </div>
+                  </td>
+
+                  <td class="col-policies">
+                    <div class="policy-stack">
+                      <span class="policy-tag" [class.tag-positive]="p.includesBreakfast" [class.tag-neutral]="!p.includesBreakfast">
+                        <i class="fa-solid" [class.fa-mug-hot]="p.includesBreakfast" [class.fa-ban]="!p.includesBreakfast"></i>
+                        {{ (p.includesBreakfast ? 'Manager:Rates:BreakfastIncluded' : 'Manager:Rates:NoBreakfast') | abpLocalization }}
+                      </span>
+                      <span class="policy-tag" [class.tag-positive]="p.isRefundable" [class.tag-danger]="!p.isRefundable">
+                        <i class="fa-solid" [class.fa-rotate-left]="p.isRefundable" [class.fa-lock]="!p.isRefundable"></i>
+                        @if (p.isRefundable) {
+                          {{ 'Manager:Rates:CutoffHours' | abpLocalization: p.cancellationCutoffHours.toString() }}
+                        } @else {
+                          {{ 'Manager:Rates:NonRefundable' | abpLocalization }}
+                        }
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="text-end text-nowrap price-cell base-price-cell">
+                    {{ p.basePrice | number: '1.0-0' }} <span class="unit">VNĐ</span>
+                  </td>
+
+                  <td class="text-end text-nowrap price-cell effective-price-cell">
+                    <div class="effective-wrap">
+                      <span class="effective-amount" [class.is-overridden]="p.isTodayOverridden">
+                        {{ p.effectivePrice | number: '1.0-0' }} <span class="unit">VNĐ</span>
+                      </span>
+                      @if (p.isTodayOverridden) {
+                        <span class="ovr-chip">OVR</span>
+                      }
+                    </div>
+                  </td>
+
+                  <td class="text-center text-nowrap" (click)="$event.stopPropagation()">
+                    <div class="status-cell">
+                      <div class="form-check form-switch mb-0">
+                        <input
+                          type="checkbox"
+                          class="form-check-input status-switch"
+                          [checked]="p.isActive"
+                          (change)="onToggleRatePlan(p, $event)"
+                        />
+                      </div>
+                      <span class="status-pill" [class.active]="p.isActive" [class.inactive]="!p.isActive">
+                        {{ (p.isActive ? 'Manager:Rates:StatusActiveShort' : 'Manager:Rates:StatusInactiveShort') | abpLocalization }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="text-center col-actions" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      class="icon-action-btn"
+                      [title]="'Manager:Rates:EditBasePrice' | abpLocalization"
+                      [attr.aria-label]="'Manager:Rates:EditBasePrice' | abpLocalization"
+                      (click)="openEditBasePriceModal(p, $event)"
+                    >
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- SECTION 3 (Daily Calendar) + SECTION 4 (Bulk Price Adjustment) -->
+    <div class="row g-4 mb-4">
+      <div class="col-xl-8">
+        <bh-pricing-calendar
+          [calendar]="calendarData()"
+          [year]="currentYear()"
+          [month]="currentMonth()"
+          [isLoading]="isLoadingCalendar()"
+          (monthChange)="onMonthChange($event)"
+          (daySelected)="onDaySelected($event)"
+        ></bh-pricing-calendar>
+      </div>
+
+      <div class="col-xl-4">
+        <bh-bulk-price-adjustment
+          [hotelId]="propertyService.currentHotelId() || ''"
+          [roomTypeId]="selectedRoomTypeId()"
+          [ratePlans]="ratePlans()"
+          [defaultRatePlanId]="selectedRatePlanId()"
+          (applied)="onBulkApplied()"
+        ></bh-bulk-price-adjustment>
+      </div>
+    </div>
+
+    <!-- SECTION 5: Price Override List -->
+    <div class="section-card">
+      <div class="section-header mb-3">
+        <div>
+          <h2 class="section-title mb-0">
+            <i class="fa-solid fa-list-check me-2"></i>
+            {{ 'Manager:Rates:SectionOverrides' | abpLocalization }}
+            @if (selectedRatePlan(); as rp) {
+              <span class="code-chip ms-2">{{ rp.name }} ({{ rp.code }})</span>
+            }
+          </h2>
+        </div>
+        <span class="badge bg-dark text-info">{{ overrides().length }}</span>
+      </div>
+
+      @if (isLoadingOverrides()) {
+        <div class="py-4 text-center text-muted">
+          <i class="fa-solid fa-spinner fa-spin me-2"></i>
+          {{ 'Common:Loading' | abpLocalization }}
+        </div>
+      } @else if (overrides().length === 0) {
+        <bh-empty-state
+          iconClass="fa-solid fa-calendar-xmark"
+          titleKey="Manager:Rates:NoOverridesFound"
+          descriptionKey="Manager:Rates:EmptyOverridesDesc"
+        ></bh-empty-state>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>{{ 'Manager:Rates:ColStartDate' | abpLocalization }}</th>
+                <th>{{ 'Manager:Rates:ColEndDate' | abpLocalization }}</th>
+                <th>{{ 'Manager:Rates:ColAdjustmentType' | abpLocalization }}</th>
+                <th>{{ 'Manager:Rates:ColAdjustmentValue' | abpLocalization }}</th>
+                <th>{{ 'Manager:Rates:ColEffectiveSnapshot' | abpLocalization }}</th>
+                <th class="text-center">CTA / CTD</th>
+                <th>{{ 'Manager:Rates:ColCreatedAt' | abpLocalization }}</th>
+                <th>{{ 'Manager:Rates:ColCreatedBy' | abpLocalization }}</th>
+                <th class="text-end">{{ 'Manager:Rates:ColActions' | abpLocalization }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of overrides(); track item.id) {
+                <tr [class.past-row]="item.isPastOnly">
+                  <td class="fw-semibold text-nowrap">{{ item.startDate | date: 'dd/MM/yyyy' }}</td>
+                  <td class="fw-semibold text-nowrap">{{ item.endDate | date: 'dd/MM/yyyy' }}</td>
+                  <td>
+                    @if (item.adjustmentType === PriceAdjustmentType.FixedPrice) {
+                      <span class="badge bg-light text-dark border">{{ 'Manager:Rates:ModeFixedPrice' | abpLocalization }}</span>
+                    } @else if (item.adjustmentType === PriceAdjustmentType.Percentage) {
+                      <span class="badge bg-info-subtle text-dark border">{{ 'Manager:Rates:ModePercentage' | abpLocalization }}</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-dark border">{{ 'Manager:Rates:ModeRestrictionsOnly' | abpLocalization }}</span>
+                    }
+                  </td>
+                  <td class="text-nowrap">
+                    @if (item.adjustmentType === PriceAdjustmentType.FixedPrice) {
+                      {{ item.adjustmentValue | number: '1.0-0' }} VNĐ
+                    } @else if (item.adjustmentType === PriceAdjustmentType.Percentage) {
+                      {{ (item.adjustmentValue || 0) > 0 ? '+' : '' }}{{ item.adjustmentValue }}%
+                    } @else {
+                      -
+                    }
+                  </td>
+                  <td class="fw-bold text-primary text-nowrap">
+                    @if (item.calculatedEffectivePrice) {
+                      {{ item.calculatedEffectivePrice | number: '1.0-0' }} VNĐ
+                    } @else {
+                      {{ 'Manager:Rates:CalendarLegendBase' | abpLocalization }}
+                    }
+                  </td>
+                  <td class="text-center text-nowrap">
+                    @if (item.isClosedToArrival) {
+                      <span class="badge bg-danger me-1">CTA</span>
+                    }
+                    @if (item.isClosedToDeparture) {
+                      <span class="badge bg-warning text-dark">CTD</span>
+                    }
+                    @if (!item.isClosedToArrival && !item.isClosedToDeparture) {
+                      <span class="text-muted small">-</span>
+                    }
+                  </td>
+                  <td class="small text-nowrap">{{ item.creationTime | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="small">{{ item.creatorName }}</td>
+                  <td class="text-end text-nowrap">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary me-1"
+                      [title]="'Common:View' | abpLocalization"
+                      (click)="openOverrideModal(item, 'view')"
+                    >
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-dark me-1"
+                      [disabled]="item.isPastOnly"
+                      [title]="'Common:Edit' | abpLocalization"
+                      (click)="openOverrideModal(item, 'edit')"
+                    >
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [disabled]="item.isPastOnly"
+                      [title]="'Common:Delete' | abpLocalization"
+                      (click)="onDeleteOverride(item)"
+                    >
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Modals & Audit Drawer -->
+<bh-edit-base-price-modal
+  [isOpen]="editBasePriceModalOpen()"
+  [hotelId]="propertyService.currentHotelId() || ''"
+  [roomTypeId]="selectedRoomTypeId()"
+  [ratePlan]="editingBasePricePlan()"
+  (closed)="editBasePriceModalOpen.set(false)"
+  (saved)="onBasePriceSaved()"
+></bh-edit-base-price-modal>
+
+<bh-day-pricing-detail-modal
+  [isOpen]="dayDetailModalOpen()"
+  [hotelId]="propertyService.currentHotelId() || ''"
+  [roomTypeId]="selectedRoomTypeId()"
+  [ratePlanId]="selectedRatePlanId()"
+  [ratePlanName]="selectedRatePlan()?.name || ''"
+  [dayCell]="selectedDayCell()"
+  (closed)="dayDetailModalOpen.set(false)"
+  (saved)="onDayQuickEditSaved()"
+></bh-day-pricing-detail-modal>
+
+<bh-edit-override-modal
+  [isOpen]="overrideModalOpen()"
+  [mode]="overrideModalMode()"
+  [hotelId]="propertyService.currentHotelId() || ''"
+  [overrideItem]="activeOverrideItem()"
+  (closed)="overrideModalOpen.set(false)"
+  (saved)="onOverrideSaved()"
+></bh-edit-override-modal>
+
+<bh-pricing-audit-log-drawer
+  [isOpen]="auditDrawerOpen()"
+  [hotelId]="propertyService.currentHotelId() || ''"
+  [roomTypeId]="selectedRoomTypeId()"
+  [ratePlans]="ratePlans()"
+  (closed)="auditDrawerOpen.set(false)"
+></bh-pricing-audit-log-drawer>

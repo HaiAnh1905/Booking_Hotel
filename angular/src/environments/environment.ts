@@ -7,7 +7,7 @@ const oAuthConfig = {
   redirectUri: baseUrl,
   clientId: 'BookingHotel_App',
   responseType: 'code',
-  scope: 'offline_access BookingHotel',
+  scope: 'BookingHotel',
   requireHttps: true,
 };
 

@@ -1,0 +1,381 @@
+<div class="frontdesk-roomrack-page">
+  <!-- Thanh công cụ & Bộ lọc quầy -->
+  <div class="page-topbar-tools">
+    <div class="title-meta">
+      <h1 class="page-title">{{ 'Menu:FrontdeskRoomRack' | abpLocalization }}</h1>
+      <div class="counter-pills">
+        <span class="pill-stat stat-total" (click)="setStatusFilter(null)">
+          {{ 'RoomRack:TotalRooms' | abpLocalization: (counts().total + '') }}
+        </span>
+        <span class="pill-stat stat-avail" [class.active]="selectedStatus() === RackStatus.Ready" (click)="setStatusFilter(RackStatus.Ready)">
+          <span class="dot-avail"></span> {{ 'Frontdesk:RackReadyCount' | abpLocalization: (counts().ready + '') }}
+        </span>
+        <span class="pill-stat stat-res" [class.active]="selectedStatus() === RackStatus.Reserved" (click)="setStatusFilter(RackStatus.Reserved)">
+          <span class="dot-res"></span> {{ 'Frontdesk:RackReservedCount' | abpLocalization: (counts().reserved + '') }}
+        </span>
+        <span class="pill-stat stat-occ" [class.active]="selectedStatus() === RackStatus.Occupied" (click)="setStatusFilter(RackStatus.Occupied)">
+          <span class="dot-occ"></span> {{ 'Frontdesk:RackOccupiedCount' | abpLocalization: (counts().occupied + '') }}
+        </span>
+        <span
+          *ngIf="counts().notReady > 0"
+          class="pill-stat stat-dirty"
+          [class.active]="selectedStatus() === RackStatus.NotReady"
+          (click)="setStatusFilter(RackStatus.NotReady)">
+          <span class="dot-dirty"></span> {{ 'Frontdesk:RackNotReadyCount' | abpLocalization: (counts().notReady + '') }}
+        </span>
+        <span
+          *ngIf="counts().unavailable > 0"
+          class="pill-stat stat-unavail"
+          [class.active]="selectedStatus() === RackStatus.Unavailable"
+          (click)="setStatusFilter(RackStatus.Unavailable)">
+          <span class="dot-unavail"></span> {{ 'Frontdesk:RackUnavailableCount' | abpLocalization: (counts().unavailable + '') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="action-controls">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          type="text"
+          class="search-field"
+          [placeholder]="'RoomRack:SearchPlaceholder' | abpLocalization"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)" />
+      </div>
+
+      <button
+        type="button"
+        class="refresh-btn"
+        [disabled]="isLoading()"
+        (click)="loadRooms()"
+        [title]="'RoomRack:Refresh' | abpLocalization">
+        <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      </button>
+
+      <div class="view-mode-toggle">
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="viewMode() === 'grid'"
+          (click)="toggleViewMode('grid')">
+          <i class="fa-solid fa-table-cells-large"></i> {{ 'RoomRack:VisualGridMode' | abpLocalization }}
+        </button>
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="viewMode() === 'table'"
+          (click)="toggleViewMode('table')">
+          <i class="fa-solid fa-list-ul"></i> {{ 'RoomRack:TableMode' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thanh lọc Tầng tự sinh -->
+  <div class="filter-strip" *ngIf="floors().length > 0 || selectedStatus() !== null">
+    <div class="filter-group" *ngIf="floors().length > 0">
+      <span class="filter-label"><i class="fa-solid fa-layer-group"></i> {{ 'RoomRack:FloorFilter' | abpLocalization }}</span>
+      <button
+        type="button"
+        class="filter-chip"
+        [class.active]="selectedFloor() === null"
+        (click)="setFloorFilter(null)">
+        {{ 'RoomRack:AllFloors' | abpLocalization }}
+      </button>
+      <button
+        *ngFor="let floor of floors()"
+        type="button"
+        class="filter-chip"
+        [class.active]="selectedFloor() === floor"
+        (click)="setFloorFilter(floor)">
+        {{ 'RoomRack:FloorX' | abpLocalization: (floor + '') }}
+      </button>
+    </div>
+
+    <div class="filter-group" *ngIf="selectedStatus() !== null">
+      <button type="button" class="clear-filter-btn" (click)="setStatusFilter(null)">
+        <i class="fa-solid fa-xmark"></i> {{ 'RoomRack:ClearStatusFilter' | abpLocalization: getStatusText(selectedStatus()!) }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="loading-box">
+    <bh-loading-spinner></bh-loading-spinner>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!isLoading() && filteredRooms().length === 0" class="empty-box">
+    <bh-empty-state
+      iconClass="fa-solid fa-bed"
+      [titleKey]="hasActiveFilters() ? 'RoomRack:EmptyFilterTitle' : 'RoomRack:EmptyTitle'"
+      [descriptionKey]="hasActiveFilters() ? 'RoomRack:EmptyFilterDesc' : 'RoomRack:EmptyDesc'"
+      [actionButtonKey]="hasActiveFilters() ? 'Common:Reset' : ''"
+      (action)="resetFilters()">
+    </bh-empty-state>
+  </div>
+
+  <!-- 1. Grid View (Read-Only + Quick Detail Drawer) -->
+  <div *ngIf="!isLoading() && filteredRooms().length > 0 && viewMode() === 'grid'" class="room-matrix-grid">
+    <div
+      *ngFor="let room of filteredRooms()"
+      class="room-card clickable-card"
+      [ngClass]="getStatusCssClass(room.rackStatus)"
+      (click)="openRoomDetail(room)">
+
+      <div class="card-head">
+        <span class="room-number">{{ room.roomNumber }}</span>
+        <span class="room-floor">T{{ room.floor }}</span>
+      </div>
+
+      <div class="card-type-row">
+        <span class="type-name text-truncate">{{ room.roomTypeName }}</span>
+      </div>
+
+      <div class="card-body">
+        <div *ngIf="room.rackStatus === RackStatus.Occupied" class="guest-info">
+          <span class="guest-name">
+            <i class="fa-solid fa-user-check"></i> {{ room.currentBooking?.guestFullName || ('Frontdesk:RackStatusOccupied' | abpLocalization) }}
+          </span>
+          <span class="date-range" *ngIf="room.currentBooking">
+            {{ room.currentBooking.checkInDate | date:'dd/MM' }} → {{ room.currentBooking.checkOutDate | date:'dd/MM' }}
+          </span>
+        </div>
+
+        <div *ngIf="room.rackStatus === RackStatus.Reserved" class="reserved-info">
+          <span class="guest-name">
+            <i class="fa-solid fa-calendar-check"></i> {{ room.currentBooking?.guestFullName || ('Frontdesk:RackStatusReserved' | abpLocalization) }}
+          </span>
+          <span class="date-range" *ngIf="room.currentBooking">
+            {{ room.currentBooking.checkInDate | date:'dd/MM' }} → {{ room.currentBooking.checkOutDate | date:'dd/MM' }}
+          </span>
+        </div>
+
+        <div *ngIf="room.rackStatus === RackStatus.Ready" class="available-info">
+          <span class="ready-badge"><i class="fa-solid fa-circle-check"></i> {{ 'Frontdesk:RackStatusReady' | abpLocalization }}</span>
+        </div>
+
+        <div *ngIf="room.rackStatus === RackStatus.NotReady" class="dirty-info">
+          <span class="dirty-badge"><i class="fa-solid fa-clock"></i> {{ 'Frontdesk:RackStatusNotReady' | abpLocalization }}</span>
+        </div>
+
+        <div *ngIf="room.rackStatus === RackStatus.Unavailable" class="unavailable-info">
+          <span class="unavail-badge">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ 'Frontdesk:RackStatusUnavailable' | abpLocalization }}
+          </span>
+          <span class="unavail-reason text-truncate" *ngIf="room.unavailableReason" [title]="room.unavailableReason">
+            {{ room.unavailableReason }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Table View -->
+  <div *ngIf="!isLoading() && filteredRooms().length > 0 && viewMode() === 'table'" class="room-table-container">
+    <bh-data-table
+      [columns]="tableColumns"
+      [items]="paginatedRooms()"
+      [pagination]="pagination()"
+      (pageChange)="onPageChange($event)">
+
+      <ng-template #cellTemplate let-item let-column="column">
+        <ng-container *ngIf="column.field === 'roomNumber'">
+          <span class="font-bold text-dark">{{ item.roomNumber }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'roomTypeName'">
+          <span>{{ item.roomTypeName }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'floor'">
+          <span>{{ 'RoomRack:FloorX' | abpLocalization: (item.floor + '') }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'rackStatus'">
+          <bh-status-badge [variant]="getBadgeVariant(item.rackStatus)">
+            {{ getStatusText(item.rackStatus) }}
+          </bh-status-badge>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'guestName'">
+          <span>{{ item.currentBooking?.guestFullName || '—' }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'actions'">
+          <div class="table-actions-row">
+            <button type="button" class="action-btn text-dark" (click)="openRoomDetail(item)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button
+              *ngIf="item.currentBooking?.bookingStatus === BookingStatus.Confirmed"
+              type="button"
+              class="action-btn text-success"
+              (click)="goToCheckIn(item.currentBooking!.bookingId)">
+              {{ 'RoomRack:CheckInAction' | abpLocalization }}
+            </button>
+            <button
+              *ngIf="item.currentBooking?.bookingStatus === BookingStatus.CheckedIn"
+              type="button"
+              class="action-btn text-danger"
+              (click)="goToCheckOut(item.currentBooking!.bookingId)">
+              {{ 'RoomRack:CheckOutAction' | abpLocalization }}
+            </button>
+          </div>
+        </ng-container>
+      </ng-template>
+    </bh-data-table>
+  </div>
+
+  <!-- Slide-over Quick Detail Drawer -->
+  <div class="drawer-backdrop" *ngIf="selectedRoom()" (click)="closeRoomDetail()"></div>
+  <aside class="room-detail-drawer" *ngIf="selectedRoom() as room">
+    <div class="drawer-header">
+      <h2>{{ 'Frontdesk:RoomDetailTitle' | abpLocalization: room.roomNumber }}</h2>
+      <button type="button" class="drawer-close" (click)="closeRoomDetail()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Thông tin phòng -->
+      <div class="info-section">
+        <h3>{{ 'Frontdesk:RoomInfoSection' | abpLocalization }}</h3>
+        <div class="info-row">
+          <span>{{ 'Approvals:RoomNumber' | abpLocalization }}</span>
+          <strong>{{ room.roomNumber }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'RoomRack:ColRoomType' | abpLocalization }}</span>
+          <strong>{{ room.roomTypeName }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'RoomRack:Floor' | abpLocalization }}</span>
+          <strong>{{ 'RoomRack:FloorX' | abpLocalization: (room.floor + '') }}</strong>
+        </div>
+        <div class="info-row" *ngIf="room.building">
+          <span>{{ 'Frontdesk:BuildingLabel' | abpLocalization }}</span>
+          <strong>{{ room.building }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:ReadinessLabel' | abpLocalization }}</span>
+          <bh-status-badge [variant]="getBadgeVariant(room.rackStatus)">
+            {{ getStatusText(room.rackStatus) }}
+          </bh-status-badge>
+        </div>
+        <div class="info-row" *ngIf="room.maxOccupancy > 0">
+          <span>{{ 'Frontdesk:MaxOccupancyLabel' | abpLocalization }}</span>
+          <strong>{{ 'Frontdesk:GuestCountValue' | abpLocalization: (room.maxOccupancy + '') }}</strong>
+        </div>
+        <div class="info-row" *ngIf="room.sizeSquareMeters > 0">
+          <span>{{ 'Frontdesk:RoomSizeLabel' | abpLocalization }}</span>
+          <strong>{{ room.sizeSquareMeters }} m²</strong>
+        </div>
+        <div class="info-row" *ngIf="room.bedType">
+          <span>{{ 'Frontdesk:BedTypeLabel' | abpLocalization }}</span>
+          <strong>{{ room.bedType }}</strong>
+        </div>
+        <div class="info-row" *ngIf="room.unavailableReason">
+          <span>{{ 'Approvals:Reason' | abpLocalization }}</span>
+          <strong class="text-danger">{{ room.unavailableReason }}</strong>
+        </div>
+      </div>
+
+      <!-- Trường hợp 1: Phòng đang có khách hoặc đã gán booking -->
+      <div class="info-section" *ngIf="room.currentBooking as booking">
+        <h3>{{ 'Frontdesk:LinkedBookingSection' | abpLocalization }}</h3>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:ColBookingCode' | abpLocalization }}</span>
+          <strong>{{ booking.bookingCode }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:ColGuest' | abpLocalization }}</span>
+          <strong>{{ booking.guestFullName }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:ColPhone' | abpLocalization }}</span>
+          <strong>{{ booking.guestPhone }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:CheckInDateLabel' | abpLocalization }}</span>
+          <strong>{{ booking.checkInDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:CheckOutDateLabel' | abpLocalization }}</span>
+          <strong>{{ booking.checkOutDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:GuestCountLabel' | abpLocalization }}</span>
+          <strong>{{ 'Frontdesk:GuestCountValue' | abpLocalization: (booking.guestCount + '') }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:PaymentStatusLabel' | abpLocalization }}</span>
+          <strong>{{ ('Frontdesk:PaymentStatus_' + booking.paymentStatus) | abpLocalization }}</strong>
+        </div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:TotalAmount' | abpLocalization }}</span>
+          <strong>{{ booking.totalAmount | number }} ₫</strong>
+        </div>
+
+        <div class="drawer-actions">
+          <button
+            *ngIf="booking.bookingStatus === BookingStatus.Confirmed"
+            type="button"
+            class="drawer-btn primary"
+            (click)="goToCheckIn(booking.bookingId)">
+            <i class="fa-solid fa-user-check"></i> {{ 'Frontdesk:GoToCheckIn' | abpLocalization }}
+          </button>
+          <button
+            *ngIf="booking.bookingStatus === BookingStatus.CheckedIn"
+            type="button"
+            class="drawer-btn danger"
+            (click)="goToCheckOut(booking.bookingId)">
+            <i class="fa-solid fa-door-open"></i> {{ 'Frontdesk:GoToCheckOut' | abpLocalization }}
+          </button>
+          <button
+            type="button"
+            class="drawer-btn secondary"
+            (click)="goToReservation(booking.bookingId)">
+            <i class="fa-solid fa-file-lines"></i> {{ 'Frontdesk:ViewReservation' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Trường hợp 2: Phòng trống sẵn sàng → cho phép gán nhanh booking chờ phòng hoặc mở danh sách đặt phòng -->
+      <div class="info-section" *ngIf="!room.currentBooking && room.rackStatus === RackStatus.Ready">
+        <h3>{{ 'Frontdesk:QuickAssignSection' | abpLocalization }}</h3>
+        <div *ngIf="isLoadingUnassigned()" class="empty-linked">
+          <i class="fa-solid fa-spinner fa-spin me-1"></i> {{ 'Common:Loading' | abpLocalization }}
+        </div>
+        <div *ngIf="!isLoadingUnassigned() && unassignedBookings().length === 0" class="empty-linked">
+          {{ 'Frontdesk:NoUnassignedBookingsForType' | abpLocalization }}
+        </div>
+        <div *ngIf="!isLoadingUnassigned() && unassignedBookings().length > 0" class="unassigned-list">
+          <div *ngFor="let b of unassignedBookings()" class="unassigned-item">
+            <div class="u-info">
+              <strong>{{ b.bookingCode }}</strong>
+              <span>{{ b.guestFullName }} • {{ b.checkInDate | date:'dd/MM' }} – {{ b.checkOutDate | date:'dd/MM' }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn-assign-inline"
+              [disabled]="assigningBookingId() === b.id"
+              (click)="assignBookingToSelectedRoom(b)">
+              <i class="fa-solid" [ngClass]="assigningBookingId() === b.id ? 'fa-spinner fa-spin' : 'fa-key'"></i>
+              {{ 'Frontdesk:AssignToThisRoom' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+        <div class="drawer-actions">
+          <button type="button" class="drawer-btn secondary" (click)="goToReservationsList()">
+            <i class="fa-solid fa-calendar-check"></i> {{ 'Frontdesk:BrowseReservations' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Trường hợp 3: Phòng trống nhưng chưa sẵn sàng / ngưng khai thác -->
+      <div class="info-section" *ngIf="!room.currentBooking && room.rackStatus !== RackStatus.Ready">
+        <h3>{{ 'Frontdesk:LinkedBookingSection' | abpLocalization }}</h3>
+        <div class="empty-linked">
+          {{ 'Frontdesk:NoLinkedBooking' | abpLocalization }}
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>

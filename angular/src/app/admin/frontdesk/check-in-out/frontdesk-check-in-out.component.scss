@@ -1,0 +1,287 @@
+.frontdesk-checkinout-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  .page-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #000000;
+      margin: 0 0 4px 0;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: #4b5563;
+      margin: 0;
+    }
+
+    .header-tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+
+      .search-wrap {
+        position: relative;
+        width: 280px;
+
+        i {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6b7280;
+        }
+
+        input {
+          padding-left: 34px;
+        }
+      }
+    }
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 8px;
+
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1.5px solid #d1d5db;
+      background: #ffffff;
+      color: #374151;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+
+      &.active {
+        background: #99ff99;
+        color: #000000;
+        border-color: #16a34a;
+      }
+    }
+  }
+
+  .state-card {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 32px;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+
+    .stay-card {
+      background: #ffffff;
+      border: 1.5px solid #808080;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      &.inhouse-card {
+        border-color: #ef4444;
+        background: #fffafa;
+      }
+
+      .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+
+        .booking-code {
+          font-weight: 800;
+          color: #000000;
+          font-size: 0.9rem;
+        }
+
+        .room-pill {
+          background: #99ff99;
+          color: #000000;
+          border: 1px solid #16a34a;
+          border-radius: 6px;
+          padding: 2px 8px;
+          font-weight: 800;
+          font-size: 0.78rem;
+
+          &.occupied {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #ef4444;
+          }
+        }
+
+        .unassigned-pill {
+          background: #f3f4f6;
+          color: #4b5563;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          padding: 2px 8px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+      }
+
+      .guest-name {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #111827;
+      }
+
+      .meta-line {
+        font-size: 0.82rem;
+        color: #4b5563;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .card-footer-actions {
+        margin-top: auto;
+        padding-top: 12px;
+      }
+    }
+  }
+
+  .btn-frontdesk-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #16a34a;
+    background: #99ff99;
+    color: #000000;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    &:hover {
+      background: #86efac;
+    }
+  }
+
+  .btn-frontdesk-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid #808080;
+    background: #ffffff;
+    color: #000000;
+    cursor: pointer;
+  }
+
+  .btn-checkout-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #ef4444;
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    &:hover {
+      background: #fecaca;
+    }
+  }
+
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: #1e293b;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+
+    .alert-warning-box {
+      padding: 10px 12px;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: #78350f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-info-box {
+      padding: 10px 12px;
+      background: #ecfdf5;
+      border: 1px solid #22c55e;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: #065f46;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-muted {
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: #4b5563;
+    }
+
+    .summary-box {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f9fafb;
+
+      .sum-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        font-size: 0.875rem;
+
+        span { color: #6b7280; }
+        strong { color: #000000; }
+      }
+    }
+  }
+}

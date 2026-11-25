@@ -1,0 +1,177 @@
+<div class="bh-showcase-page">
+  <!-- Title -->
+  <div class="mb-4">
+    <h3 class="fw-bold text-dark mb-1">
+      <i class="fa-solid fa-shapes text-info me-2"></i>
+      {{ 'Admin:ShowcaseTitle' | abpLocalization }}
+    </h3>
+    <p class="text-muted small">
+      {{ 'Admin:ShowcaseSubtitle' | abpLocalization }}
+    </p>
+  </div>
+
+  <!-- Row 1: Badges & Toastr Triggers -->
+  <div class="row g-4 mb-4">
+    <!-- Status Badges Showcase -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white border-bottom p-3">
+          <h6 class="fw-bold mb-0">Huy Hiệu Trạng Thái (Status Badges theo Hiến pháp)</h6>
+        </div>
+        <div class="card-body p-4 d-flex flex-column gap-3">
+          <div>
+            <div class="small fw-semibold text-muted mb-2">Phân hệ Buồng phòng & Lễ tân:</div>
+            <div class="d-flex flex-wrap gap-2">
+              <bh-status-badge variant="available" text="Available (#99FF99)"></bh-status-badge>
+              <bh-status-badge variant="dirty" text="Dirty (#808080)"></bh-status-badge>
+              <bh-status-badge variant="occupied" text="Occupied (#990000)"></bh-status-badge>
+              <bh-status-badge variant="maintenance" text="Maintenance (#FFA500)"></bh-status-badge>
+            </div>
+          </div>
+
+          <div>
+            <div class="small fw-semibold text-muted mb-2">Trạng thái Tài khoản & Phân quyền:</div>
+            <div class="d-flex flex-wrap gap-2">
+              <bh-status-badge variant="active" text="Active"></bh-status-badge>
+              <bh-status-badge variant="locked" text="Locked"></bh-status-badge>
+              <bh-status-badge variant="pending" text="Pending"></bh-status-badge>
+              <bh-status-badge variant="inactive" text="Inactive"></bh-status-badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toastr Triggers Showcase -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white border-bottom p-3">
+          <h6 class="fw-bold mb-0">{{ 'Admin:SampleToasts' | abpLocalization }}</h6>
+        </div>
+        <div class="card-body p-4 d-flex flex-column justify-content-center">
+          <p class="text-muted small mb-3">Bấm các nút dưới đây để kích hoạt thông báo Toast nổi góc phải màn hình:</p>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-success btn-sm" (click)="triggerToast('success')">
+              <i class="fa-solid fa-circle-check me-1"></i> {{ 'Admin:TriggerSuccess' | abpLocalization }}
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" (click)="triggerToast('error')">
+              <i class="fa-solid fa-circle-xmark me-1"></i> {{ 'Admin:TriggerError' | abpLocalization }}
+            </button>
+            <button type="button" class="btn btn-warning btn-sm text-dark" (click)="triggerToast('warning')">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ 'Admin:TriggerWarning' | abpLocalization }}
+            </button>
+            <button type="button" class="btn btn-info btn-sm text-dark" (click)="triggerToast('info')">
+              <i class="fa-solid fa-circle-info me-1"></i> {{ 'Admin:TriggerInfo' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Modal & Spinner Demo -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white border-bottom p-3">
+          <h6 class="fw-bold mb-0">{{ 'Admin:SampleModal' | abpLocalization }}</h6>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-3">Mở hộp thoại xác nhận với backdrop làm mờ, phím ESC và nút tác vụ màu chuẩn:</p>
+          <button type="button" class="btn btn-bh-primary btn-sm" (click)="openModal()">
+            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
+            {{ 'Admin:OpenModal' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white border-bottom p-3">
+          <h6 class="fw-bold mb-0">{{ 'Admin:LoadingSpinnerDemo' | abpLocalization }}</h6>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-3">Thử nghiệm bật vòng xoay tải dữ liệu toàn màn hình trong 1.5 giây:</p>
+          <button type="button" class="btn btn-outline-dark btn-sm" (click)="toggleSpinner()">
+            <i class="fa-solid fa-spinner me-1"></i>
+            {{ 'Admin:ToggleSpinner' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: DataTable Component Demo -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+      <h6 class="fw-bold mb-0">
+        <i class="fa-solid fa-table me-2 text-danger"></i>
+        {{ 'Admin:SampleTable' | abpLocalization }}
+      </h6>
+    </div>
+    <div class="card-body p-0">
+      <bh-data-table
+        [columns]="columns"
+        [items]="sampleData()"
+        [pagination]="paginationState"
+      >
+        <!-- Custom Cell Template for status and actions -->
+        <ng-template #cellTemplate let-item let-column="column">
+          @if (column.field === 'status') {
+            <bh-status-badge
+              [variant]="item.status === 'active' ? 'active' : 'locked'"
+              [text]="item.status"
+            ></bh-status-badge>
+          } @else if (column.field === 'actions') {
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="openModal()">
+                <i class="fa-solid fa-pencil"></i>
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="openModal()">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          } @else {
+            {{ item[column.field] }}
+          }
+        </ng-template>
+      </bh-data-table>
+    </div>
+  </div>
+
+  <!-- Row 4: Empty State Demo -->
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-bottom p-3">
+      <h6 class="fw-bold mb-0">{{ 'Admin:EmptyStateDemo' | abpLocalization }}</h6>
+    </div>
+    <div class="card-body p-0">
+      <bh-empty-state
+        [titleKey]="'Common:NoData'"
+        descriptionKey="Chưa có dữ liệu nào trong danh sách. Bấm vào nút bên dưới để tạo mới."
+        [actionButtonKey]="'Admin:CreateNew'"
+        (action)="triggerToast('info')"
+      ></bh-empty-state>
+    </div>
+  </div>
+
+  <!-- Modal Component Instance -->
+  <bh-modal
+    [(isOpen)]="isModalOpen"
+    [config]="modalConfig"
+    [busy]="isModalBusy()"
+    (confirm)="handleModalConfirm()"
+    (cancel)="isModalOpen.set(false)"
+  >
+    <div class="alert alert-warning small mb-0">
+      <i class="fa-solid fa-circle-exclamation me-1"></i>
+      Hệ thống sẽ ghi nhận lịch sử kiểm toán an ninh cho hành động này.
+    </div>
+  </bh-modal>
+
+  <!-- Fullscreen Loading Spinner Overlay (when active) -->
+  @if (isSpinnerActive()) {
+    <bh-loading-spinner [isFullscreen]="true"></bh-loading-spinner>
+  }
+</div>
+

@@ -1,0 +1,409 @@
+<div class="tenant-list-page">
+  <!-- Header -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h2 class="page-title mb-1">
+        <i class="fa-solid fa-building-user me-2 text-cyan"></i>
+        {{ 'Tenant:Title' | abpLocalization }}
+      </h2>
+      <p class="text-muted small mb-0">
+        {{ 'Tenant:Subtitle' | abpLocalization }}
+      </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="loadTenants()"
+        [disabled]="isLoading"
+        [title]="'Common:Refresh' | abpLocalization"
+      >
+        <i class="fa-solid fa-rotate" [class.fa-spin]="isLoading"></i>
+        <span class="ms-1">{{ 'Common:Refresh' | abpLocalization }}</span>
+      </button>
+
+      <button type="button" class="btn btn-primary-gradient btn-sm" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus me-1"></i>
+        <span>{{ 'Tenant:NewTenant' | abpLocalization }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="filter-card mb-3 p-3 bg-white rounded-3 shadow-sm border">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-6 col-lg-4">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="fa-solid fa-magnifying-glass text-muted"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0"
+            [(ngModel)]="searchFilter"
+            (keyup.enter)="onSearch()"
+            [placeholder]="'Tenant:SearchPlaceholder' | abpLocalization"
+          />
+        </div>
+      </div>
+      <div class="col-auto">
+        <button type="button" class="btn btn-outline-primary" (click)="onSearch()">
+          <i class="fa-solid fa-filter me-1"></i> {{ 'Common:Search' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng Dữ Liệu Tenant -->
+  <div class="tenant-table-wrapper bg-white rounded-3 shadow-sm border overflow-hidden">
+    <bh-data-table
+      [columns]="columns"
+      [items]="tenants"
+      [loading]="isLoading"
+      [pagination]="pagination"
+      (pageChange)="onPageChange($event)"
+    >
+      <ng-template #cellTemplate let-item let-column="column">
+        <!-- Tên Chuỗi Khách Sạn -->
+        <ng-container *ngIf="column.field === 'name'">
+          <div class="d-flex align-items-center gap-2">
+            <div class="tenant-avatar">
+              <i class="fa-solid fa-hotel"></i>
+            </div>
+            <div>
+              <strong class="d-block text-dark font-medium">{{ item.name }}</strong>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Mã Tenant ID -->
+        <ng-container *ngIf="column.field === 'id'">
+          <code class="text-muted small">{{ item.id }}</code>
+        </ng-container>
+
+        <!-- Cơ Sở Dữ Liệu -->
+        <ng-container *ngIf="column.field === 'database'">
+          <span class="badge bg-secondary-soft">
+            <i class="fa-solid fa-server me-1"></i
+            >{{ 'Tenant:SharedDatabaseBadge' | abpLocalization }}
+          </span>
+        </ng-container>
+
+        <!-- Hành Động Thao Tác -->
+        <ng-container *ngIf="column.field === 'actions'">
+          <div class="action-buttons d-inline-flex gap-1">
+            <!-- Sửa tên -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              (click)="openEditModal(item)"
+              [title]="'Tenant:EditNameTitle' | abpLocalization"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+
+            <!-- Cấu hình Connection String -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-info"
+              (click)="openConnectionStringModal(item)"
+              [title]="'Tenant:ConfigureConnTitle' | abpLocalization"
+            >
+              <i class="fa-solid fa-database"></i>
+            </button>
+
+            <!-- Xóa Tenant -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              (click)="openDeleteModal(item)"
+              [title]="'Tenant:DeleteTenantTitle' | abpLocalization"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </ng-container>
+      </ng-template>
+    </bh-data-table>
+  </div>
+
+  <!-- Modal Cấp Mới Tenant -->
+  <bh-modal
+    [isOpen]="isCreateModalOpen"
+    [config]="createModalConfig"
+    [busy]="isCreating"
+    (cancel)="cancelCreate()"
+    (confirm)="confirmCreate()"
+  >
+    <form [formGroup]="createForm" class="tenant-form" novalidate autocomplete="off">
+      <!-- Bẫy vô hiệu hóa tính năng tự động điền (autofill) của Chrome / Edge -->
+      <input
+        type="text"
+        name="fake_username_trap"
+        style="position: absolute; opacity: 0; height: 0; width: 0; z-index: -1"
+        tabindex="-1"
+        autocomplete="off"
+      />
+      <input
+        type="password"
+        name="fake_password_trap"
+        style="position: absolute; opacity: 0; height: 0; width: 0; z-index: -1"
+        tabindex="-1"
+        autocomplete="new-password"
+      />
+
+      <div class="row g-3">
+        <!-- Tên chuỗi khách sạn -->
+        <div class="col-12">
+          <label for="tenantNameInput" class="form-label">
+            {{ 'Tenant:TenantName' | abpLocalization }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="tenantNameInput"
+            type="text"
+            formControlName="name"
+            class="form-control"
+            [placeholder]="'Tenant:NamePlaceholder' | abpLocalization"
+            autocomplete="off"
+            [class.is-invalid]="createForm.get('name')?.touched && createForm.get('name')?.invalid"
+          />
+          <div
+            *ngIf="createForm.get('name')?.touched && createForm.get('name')?.hasError('required')"
+            class="invalid-feedback d-block"
+          >
+            {{ 'Tenant:NameRequired' | abpLocalization }}
+          </div>
+          <div
+            *ngIf="createForm.get('name')?.touched && createForm.get('name')?.hasError('minlength')"
+            class="invalid-feedback d-block"
+          >
+            {{ 'Tenant:NameMinLength' | abpLocalization }}
+          </div>
+        </div>
+
+        <div class="col-12 mt-2">
+          <div class="tenant-admin-card">
+            <div class="tenant-admin-header d-flex align-items-center gap-2 mb-3">
+              <div class="icon-avatar">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <div>
+                <h6 class="mb-0 text-title font-semibold">
+                  {{ 'Tenant:AdminAccountSectionTitle' | abpLocalization }}
+                </h6>
+                <p class="text-subtitle mb-0">
+                  {{ 'Tenant:AdminAccountSectionSubtitle' | abpLocalization }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Email Quản trị viên Tenant -->
+            <div class="mb-3">
+              <label for="tenantAdminEmail" class="form-label small">
+                {{ 'Tenant:AdminEmailAddress' | abpLocalization }}
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                id="tenantAdminEmail"
+                type="email"
+                formControlName="adminEmailAddress"
+                class="form-control"
+                [placeholder]="'Tenant:AdminEmailPlaceholder' | abpLocalization"
+                autocomplete="off"
+                [class.is-invalid]="
+                  createForm.get('adminEmailAddress')?.touched &&
+                  createForm.get('adminEmailAddress')?.invalid
+                "
+              />
+              <div
+                *ngIf="
+                  createForm.get('adminEmailAddress')?.touched &&
+                  createForm.get('adminEmailAddress')?.invalid
+                "
+                class="invalid-feedback d-block"
+              >
+                {{ 'Tenant:AdminEmailInvalid' | abpLocalization }}
+              </div>
+            </div>
+
+            <!-- Mật khẩu khởi tạo -->
+            <div class="mb-2">
+              <label for="tenantAdminPassword" class="form-label small">
+                {{ 'Tenant:AdminPassword' | abpLocalization }} <span class="text-danger">*</span>
+              </label>
+              <input
+                id="tenantAdminPassword"
+                type="password"
+                formControlName="adminPassword"
+                class="form-control"
+                [placeholder]="'Tenant:AdminPasswordPlaceholder' | abpLocalization"
+                autocomplete="new-password"
+                [class.is-invalid]="
+                  createForm.get('adminPassword')?.touched &&
+                  createForm.get('adminPassword')?.invalid
+                "
+              />
+              <div
+                *ngIf="
+                  createForm.get('adminPassword')?.touched &&
+                  createForm.get('adminPassword')?.hasError('required')
+                "
+                class="invalid-feedback d-block"
+              >
+                {{ 'Tenant:AdminPasswordRequired' | abpLocalization }}
+              </div>
+
+              <!-- Tiêu chí mật khẩu -->
+              <div class="password-checklist">
+                <div class="criterion-item" [class.valid]="passwordCriteria.hasMinLength">
+                  <i
+                    class="fa-solid"
+                    [ngClass]="
+                      passwordCriteria.hasMinLength ? 'fa-circle-check' : 'fa-circle-xmark'
+                    "
+                  ></i>
+                  <span>{{ 'Auth:PasswordRuleMinLength' | abpLocalization }}</span>
+                </div>
+                <div class="criterion-item" [class.valid]="passwordCriteria.hasUpperCase">
+                  <i
+                    class="fa-solid"
+                    [ngClass]="
+                      passwordCriteria.hasUpperCase ? 'fa-circle-check' : 'fa-circle-xmark'
+                    "
+                  ></i>
+                  <span>{{ 'Auth:PasswordRuleUpperCase' | abpLocalization }}</span>
+                </div>
+                <div class="criterion-item" [class.valid]="passwordCriteria.hasLowerCase">
+                  <i
+                    class="fa-solid"
+                    [ngClass]="
+                      passwordCriteria.hasLowerCase ? 'fa-circle-check' : 'fa-circle-xmark'
+                    "
+                  ></i>
+                  <span>{{ 'Auth:PasswordRuleLowerCase' | abpLocalization }}</span>
+                </div>
+                <div class="criterion-item" [class.valid]="passwordCriteria.hasNumeric">
+                  <i
+                    class="fa-solid"
+                    [ngClass]="passwordCriteria.hasNumeric ? 'fa-circle-check' : 'fa-circle-xmark'"
+                  ></i>
+                  <span>{{ 'Auth:PasswordRuleDigit' | abpLocalization }}</span>
+                </div>
+                <div class="criterion-item" [class.valid]="passwordCriteria.hasSpecial">
+                  <i
+                    class="fa-solid"
+                    [ngClass]="passwordCriteria.hasSpecial ? 'fa-circle-check' : 'fa-circle-xmark'"
+                  ></i>
+                  <span>{{ 'Auth:PasswordRuleSpecial' | abpLocalization }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </bh-modal>
+
+  <!-- Modal Chỉnh Sửa Tên Chuỗi Khách Sạn -->
+  <bh-modal
+    [isOpen]="isEditModalOpen"
+    [config]="editModalConfig"
+    [busy]="isEditing"
+    (cancel)="cancelEdit()"
+    (confirm)="confirmEdit()"
+  >
+    <form [formGroup]="editForm" class="tenant-form" novalidate>
+      <div class="mb-3">
+        <label for="editTenantName" class="form-label">
+          {{ 'Tenant:TenantName' | abpLocalization }} <span class="text-danger">*</span>
+        </label>
+        <input
+          id="editTenantName"
+          type="text"
+          formControlName="name"
+          class="form-control"
+          [placeholder]="'Tenant:EditNamePlaceholder' | abpLocalization"
+          [class.is-invalid]="editForm.get('name')?.touched && editForm.get('name')?.invalid"
+        />
+        <div
+          *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('required')"
+          class="invalid-feedback d-block"
+        >
+          {{ 'Tenant:NameRequired' | abpLocalization }}
+        </div>
+        <div
+          *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('minlength')"
+          class="invalid-feedback d-block"
+        >
+          {{ 'Tenant:NameMinLength' | abpLocalization }}
+        </div>
+      </div>
+    </form>
+  </bh-modal>
+
+  <!-- Modal Cấu Hình Chuỗi Kết Nối CSDL -->
+  <bh-modal
+    [isOpen]="isConnModalOpen"
+    [config]="connModalConfig"
+    [busy]="isSavingConn"
+    (cancel)="cancelConnectionString()"
+    (confirm)="confirmConnectionString()"
+  >
+    <div class="conn-string-content">
+      <p class="text-muted small mb-3">
+        {{ 'Tenant:ConnStringDesc' | abpLocalization }}
+      </p>
+
+      <div class="form-check form-switch mb-3">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="useDedicatedDbSwitch"
+          [(ngModel)]="useDedicatedDb"
+        />
+        <label class="form-check-label font-medium" for="useDedicatedDbSwitch">
+          {{ 'Tenant:UseDedicatedDbLabel' | abpLocalization }}
+        </label>
+      </div>
+
+      <div *ngIf="useDedicatedDb" class="mt-3">
+        <label for="dedicatedConnInput" class="form-label small">
+          {{ 'Tenant:ConnectionStrings' | abpLocalization }} <span class="text-danger">*</span>
+        </label>
+        <textarea
+          id="dedicatedConnInput"
+          class="form-control font-monospace small"
+          rows="3"
+          [(ngModel)]="dedicatedConnStr"
+          [placeholder]="'Tenant:ConnStringTextareaPlaceholder' | abpLocalization"
+        ></textarea>
+        <div class="form-text small">
+          {{ 'Tenant:ConnStringNotice' | abpLocalization }}
+        </div>
+      </div>
+
+      <div *ngIf="!useDedicatedDb" class="alert alert-info py-2 px-3 small mt-3 mb-0">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        {{ 'Tenant:SharedDbNotice' | abpLocalization }}
+      </div>
+    </div>
+  </bh-modal>
+
+  <!-- Modal Xác Nhận Xóa -->
+  <bh-modal
+    [isOpen]="isDeleteModalOpen"
+    [config]="deleteModalConfig"
+    [busy]="isDeleting"
+    (cancel)="cancelDelete()"
+    (confirm)="confirmDelete()"
+  >
+    <div class="text-center py-2">
+      <i class="fa-solid fa-triangle-exclamation text-warning display-4 mb-3"></i>
+      <h5 class="mb-2">{{ 'Tenant:DeleteConfirmTitle' | abpLocalization }}</h5>
+      <p class="text-muted mb-0">
+        {{ 'Tenant:DeleteConfirmDesc' | abpLocalization }}
+      </p>
+    </div>
+  </bh-modal>
+</div>

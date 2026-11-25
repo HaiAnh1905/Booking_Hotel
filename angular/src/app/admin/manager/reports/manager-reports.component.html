@@ -1,0 +1,187 @@
+<div class="manager-reports-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Menu:ManagerReports' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Manager:Reports:Subtitle' | abpLocalization }}</p>
+    </div>
+
+    <!-- Export Button -->
+    <button type="button" class="btn btn-outline-success fw-bold" (click)="exportCsv()" [disabled]="!performance()">
+      <i class="fa-solid fa-file-excel me-1"></i> {{ 'Manager:Reports:ExportExcel' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Date Range Filter & Presets Toolbar -->
+  <div class="toolbar-card">
+    <div class="date-range-picker-row">
+      <div class="date-input-item">
+        <label class="filter-label">{{ 'Common:FromDate' | abpLocalization }}</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [ngModel]="fromDate()"
+          (ngModelChange)="fromDate.set($event)" />
+      </div>
+      <div class="date-input-item">
+        <label class="filter-label">{{ 'Common:ToDate' | abpLocalization }}</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [ngModel]="toDate()"
+          (ngModelChange)="toDate.set($event)" />
+      </div>
+
+      <button type="button" class="btn btn-primary btn-sm mt-3" (click)="loadReports(propertyService.currentHotelId() || '')">
+        <i class="fa-solid fa-filter me-1"></i> {{ 'Common:ApplyFilter' | abpLocalization }}
+      </button>
+
+      <div class="preset-buttons mt-3 ms-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="setPreset(7)">{{ 'Manager:Reports:Last7Days' | abpLocalization }}</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm ms-1" (click)="setPreset(30)">{{ 'Manager:Reports:Last30Days' | abpLocalization }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && performance()">
+    <!-- Lưới chỉ số USALI cốt lõi (Core USALI KPIs) -->
+    <div class="metrics-grid">
+      <!-- 1. Tỷ lệ lấp đầy (Occupancy Rate) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #0284c7; background-color: rgba(2, 132, 199, 0.1);">
+          <i class="fa-solid fa-percent"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:Reports:OccupancyRate' | abpLocalization }}</span>
+          <span class="metric-value">{{ performance()?.occupancyRate || 0 }}%</span>
+          <span class="metric-sub">
+            {{ performance()?.occupiedRoomNights }} / {{ performance()?.availableInventoryNights }} đêm-phòng bán
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Giá bình quân ngày (ADR) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #16a34a; background-color: rgba(22, 163, 74, 0.1);">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:Reports:ADR' | abpLocalization }}</span>
+          <span class="metric-value">{{ (performance()?.averageDailyRate || 0) | number:'1.0-0' }} VNĐ</span>
+          <span class="metric-sub">{{ 'Manager:Reports:AdrFormula' | abpLocalization }}</span>
+        </div>
+      </div>
+
+      <!-- 3. Doanh thu phòng sẵn có (RevPAR) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #7c3aed; background-color: rgba(124, 58, 237, 0.1);">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:Reports:RevPAR' | abpLocalization }}</span>
+          <span class="metric-value">{{ (performance()?.revenuePerAvailableRoom || 0) | number:'1.0-0' }} VNĐ</span>
+          <span class="metric-sub">{{ 'Manager:Reports:RevparFormula' | abpLocalization }}</span>
+        </div>
+      </div>
+
+      <!-- 4. Doanh thu tiền phòng thuần -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #d97706; background-color: rgba(217, 119, 6, 0.1);">
+          <i class="fa-solid fa-sack-dollar"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:Reports:RoomRevenue' | abpLocalization }}</span>
+          <span class="metric-value text-primary">{{ (performance()?.totalRoomRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+          <span class="metric-sub">{{ performance()?.totalPhysicalRooms }} phòng thực tế</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chi tiết phân tách dòng tiền & Hủy phòng -->
+    <div class="reports-split-layout mt-4">
+      <!-- Phân rã Dòng Tiền Minh Bạch (Revenue Breakdown) -->
+      <div class="report-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <i class="fa-solid fa-scale-balanced text-primary"></i> Phân Rã Dòng Tiền (USALI Cash Flow)
+          </h2>
+        </div>
+        <div class="panel-body">
+          <div class="breakdown-list">
+            <div class="breakdown-item">
+              <span class="lbl">{{ 'Manager:Reports:RoomRevenue' | abpLocalization }}</span>
+              <span class="val fw-bold">{{ (breakdown()?.roomRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">{{ 'Manager:Reports:ServiceRevenue' | abpLocalization }}</span>
+              <span class="val fw-bold text-muted">{{ (breakdown()?.serviceRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item highlight">
+              <span class="lbl fw-bold">{{ 'Manager:Reports:TotalBilledRevenue' | abpLocalization }}</span>
+              <span class="val fw-bold text-primary">{{ (breakdown()?.totalBilledRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">{{ 'Manager:Reports:CollectedRevenue' | abpLocalization }}</span>
+              <span class="val fw-bold text-success">{{ (breakdown()?.collectedRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">{{ 'Manager:Reports:RefundAmount' | abpLocalization }}</span>
+              <span class="val fw-bold text-danger">{{ (breakdown()?.refundAmount || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl text-warning fw-bold">{{ 'Manager:Reports:OutstandingReceivables' | abpLocalization }}</span>
+              <span class="val fw-bold text-warning">{{ (breakdown()?.uncollectedBalance || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thống kê Hủy Phòng & Thất Thoát Công Suất -->
+      <div class="report-panel">
+        <div class="panel-header">
+          <h2 class="panel-title text-danger">
+            <i class="fa-solid fa-triangle-exclamation"></i> Thất Thoát Công Suất & Hủy Phòng
+          </h2>
+        </div>
+        <div class="panel-body">
+          <div class="breakdown-list">
+            <div class="breakdown-item">
+              <span class="lbl">Tỷ lệ hủy phòng (Cancellations)</span>
+              <span class="val fw-bold text-danger">{{ loss()?.cancellationRate || 0 }}% ({{ loss()?.cancelledCount }} đơn)</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">Tỷ lệ khách không đến (No-Show)</span>
+              <span class="val fw-bold text-danger">{{ loss()?.noShowRate || 0 }}% ({{ loss()?.noShowCount }} đơn)</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">Số lượt miễn/giảm phạt No-Show</span>
+              <span class="val fw-bold">{{ loss()?.waivedNoShowPenaltiesCount || 0 }} lượt</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">Tiền phạt No-Show thực thu</span>
+              <span class="val fw-bold text-success">{{ (loss()?.totalPenaltiesCollected || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item highlight">
+              <span class="lbl fw-bold">{{ 'Manager:Reports:OutOfServiceLoss' | abpLocalization }}</span>
+              <span class="val fw-bold text-danger">{{ (loss()?.estimatedRevenueLoss || 0) | number:'1.0-0' }} VNĐ</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="lbl">Số đêm phòng OutOfService</span>
+              <span class="val fw-bold">{{ loss()?.outOfServiceLossNights || 0 }} đêm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

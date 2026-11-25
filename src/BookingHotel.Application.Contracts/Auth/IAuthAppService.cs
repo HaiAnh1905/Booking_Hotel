@@ -26,5 +26,7 @@ public interface IAuthAppService : IApplicationService
     Task<ResetPasswordInfoDto> GetResetPasswordInfoAsync(Guid userId);
 
     Task UnlockUserAsync(Guid userId);
+
+    Task<LoginResultDto> ChangePasswordAsync(ChangePasswordInputDto input);
 }
 

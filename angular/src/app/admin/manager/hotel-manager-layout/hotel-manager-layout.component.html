@@ -1,0 +1,165 @@
+<div class="hotel-manager-shell" [class.collapsed]="isCollapsed()">
+  <div 
+    class="mobile-backdrop" 
+    *ngIf="isMobileSidebarOpen()" 
+    (click)="toggleMobileSidebar()">
+  </div>
+
+  <!-- Sidebar Phân hệ Quản lý Cơ sở (Operational Manager Console) -->
+  <aside class="manager-sidebar" [class.mobile-open]="isMobileSidebarOpen()">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-hotel brand-icon"></i>
+        <div class="brand-text" *ngIf="!isCollapsed()">
+          <span class="brand-name">Booking Hotel</span>
+          <span class="manager-badge">
+            <i class="fa-solid fa-user-gear"></i> Hotel Manager
+          </span>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        class="collapse-btn" 
+        (click)="toggleSidebar()" 
+        [title]="'Common:CollapseSidebar' | abpLocalization">
+        <i class="fa-solid" [ngClass]="isCollapsed() ? 'fa-angles-right' : 'fa-angles-left'"></i>
+      </button>
+    </div>
+
+    <!-- Danh mục Menu Quản lý Cơ sở -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li *ngFor="let item of menuItems()" class="nav-item">
+          <a 
+            [routerLink]="item.route" 
+            [queryParams]="{ hotelId: propertyService.currentHotelId() }"
+            queryParamsHandling="merge"
+            routerLinkActive="active" 
+            [routerLinkActiveOptions]="{ exact: item.route === '/manager/dashboard' }"
+            class="nav-link"
+            (click)="isMobileSidebarOpen.set(false)"
+            [title]="item.labelKey | abpLocalization">
+            <i [class]="item.icon + ' nav-icon'"></i>
+            <span class="nav-label" *ngIf="!isCollapsed()">{{ item.labelKey | abpLocalization }}</span>
+            <span 
+              *ngIf="item.badgeCount && item.badgeCount > 0 && !isCollapsed()" 
+              class="nav-badge" 
+              [ngClass]="'badge-' + item.badgeVariant">
+              {{ item.badgeCount }}
+            </span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Chân Sidebar: Cơ sở đang hoạt động -->
+    <div class="sidebar-footer" *ngIf="!isCollapsed()">
+      <div class="property-active-meta">
+        <span class="property-tag"><i class="fa-solid fa-map-pin"></i> {{ 'Manager:AssignedBranch' | abpLocalization }}</span>
+        <span class="property-title text-truncate">{{ propertyService.currentHotel()?.name || (propertyService.assignedHotels().length === 0 ? ('Manager:NotAssignedToHotel' | abpLocalization) : ('Manager:NoHotelSelected' | abpLocalization)) }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Vùng nội dung chính -->
+  <div class="main-wrapper">
+    <!-- Topbar Quản lý: Chứa Property Selector & Portal Switcher -->
+    <header class="manager-topbar">
+      <div class="topbar-left">
+        <button 
+          type="button" 
+          class="mobile-menu-btn" 
+          (click)="toggleMobileSidebar()" 
+          title="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Bộ chọn Chi nhánh Khách sạn (Property Selector Dropdown) -->
+        <div class="property-selector-container">
+          <button 
+            type="button" 
+            class="property-dropdown-btn" 
+            (click)="togglePropertyDropdown()"
+            [attr.aria-expanded]="isPropertyDropdownOpen()">
+            <div class="property-icon-box">
+              <i class="fa-solid fa-hotel"></i>
+            </div>
+            <div class="property-info-text">
+              <span class="property-label">{{ 'Manager:OperatingBranch' | abpLocalization }}</span>
+              <span class="property-name">{{ propertyService.currentHotel()?.name || (propertyService.assignedHotels().length === 0 ? ('Manager:NotAssignedToHotel' | abpLocalization) : ('Manager:SelectHotelPlaceholder' | abpLocalization)) }}</span>
+            </div>
+            <i class="fa-solid fa-chevron-down caret-icon"></i>
+          </button>
+
+          <div class="property-menu-dropdown" *ngIf="isPropertyDropdownOpen()">
+            <div class="dropdown-header">
+              <i class="fa-solid fa-building"></i> {{ 'Manager:AssignedHotelsList' | abpLocalization }}
+            </div>
+            <ul class="property-list" *ngIf="propertyService.assignedHotels().length > 0">
+              <li *ngFor="let h of propertyService.assignedHotels()">
+                <button 
+                  type="button" 
+                  class="property-item-btn" 
+                  [class.active]="h.id === propertyService.currentHotelId()"
+                  (click)="selectHotel(h.id)">
+                  <div class="item-name-row">
+                    <span class="item-name">{{ h.name }}</span>
+                    <span *ngIf="h.isPrimary" class="primary-tag">{{ 'Manager:PrimaryTag' | abpLocalization }}</span>
+                  </div>
+                  <span class="item-code">{{ h.code }} • {{ h.address }}</span>
+                </button>
+              </li>
+            </ul>
+
+            <div class="empty-property-list" *ngIf="propertyService.assignedHotels().length === 0">
+              <i class="fa-solid fa-circle-exclamation empty-icon"></i>
+              <span class="empty-text">{{ 'Manager:NotAssignedToHotel' | abpLocalization }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Nút chuyển đổi sang Quầy Lễ Tân (Portal Switcher cho nhân sự kiêm nhiệm) -->
+        <bh-portal-switcher currentPortal="manager"></bh-portal-switcher>
+
+        <bh-language-switcher></bh-language-switcher>
+
+        <!-- Trình đơn Người dùng -->
+        <div class="user-dropdown-container">
+          <button 
+            type="button" 
+            class="user-btn" 
+            (click)="toggleUserMenu()"
+            [attr.aria-expanded]="isUserMenuOpen()">
+            <div class="user-avatar">
+              <i class="fa-solid fa-user-gear"></i>
+            </div>
+            <span class="user-role-label">Hotel Manager</span>
+            <i class="fa-solid fa-chevron-down caret-icon"></i>
+          </button>
+
+          <div class="user-menu-dropdown" *ngIf="isUserMenuOpen()">
+            <div class="user-menu-header">
+              <div class="user-name">{{ currentUserName() || ('Manager:StaffRole' | abpLocalization) }}</div>
+              <div class="user-email" *ngIf="currentUserEmail()">{{ currentUserEmail() }}</div>
+            </div>
+            <hr class="dropdown-divider" />
+            <a routerLink="/auth/change-password" class="dropdown-item" (click)="toggleUserMenu()">
+              <i class="fa-solid fa-key"></i> {{ 'Common:ChangePassword' | abpLocalization }}
+            </a>
+            <hr class="dropdown-divider" />
+            <button type="button" class="dropdown-item text-danger" (click)="logout()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> {{ 'Common:Logout' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+

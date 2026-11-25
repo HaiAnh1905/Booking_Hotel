@@ -1,166 +1,106 @@
-/* Styles for the home component */
-.card-bg-image {
-  position: absolute;
-  width: 630px;
-  height: auto;
-  bottom: 0;
-  right: 0;
-  z-index: 1;
-}
+.bh-landing-page {
+  .bh-hero-section {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0505 50%, #400000 100%);
+    padding: 4rem 1rem 5rem;
+    overflow: hidden;
 
-.starting-content {
-  position: relative;
-  z-index: 2;
-}
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(153, 0, 0, 0.25) 0%, transparent 60%);
+      pointer-events: none;
+    }
 
+    .hero-content-wrapper {
+      max-width: 1200px;
+    }
 
-.getting-started-hero-card .card-body {
-  position: relative;
-}
+    .hero-title {
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
 
-.abp-support {
-  width: 178px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-support.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
+    .hero-subtitle {
+      max-width: 720px;
+      font-size: 1.15rem;
+    }
 
-.abp-community {
-  width: 215px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-community.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-blog {
-  width: 142px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-blog.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-studio {
-  width: 146px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-studio.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-suite {
-  width: 132px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-suite.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.logo-x {
-  width: 20px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/x.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.entity-famework-core {
-  width: 84px;
-  height: 24px;
-  background-image: url('/assets/images/getting-started/entity-famework-core-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.mongo-db {
-  width: 85px;
-  height: 24px;
-  background-image: url('/assets/images/getting-started/mongo-db-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.blazor {
-  width: 65px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/blazor-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.angular {
-  width: 82px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/angular-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.mvc-razor-pages {
-  width: 95px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/mvc-razor-pages-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-:host-context(.lpx-theme-dark) {
-  .abp-support {
-    background-image: url('/assets/images/getting-started/abp-support-white.svg');
+    .bh-search-card {
+      max-width: 1000px;
+      transform: translateY(2rem);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
   }
 
-  .abp-community {
-    background-image: url('/assets/images/getting-started/abp-community-white.svg');
+  .section-title {
+    color: #111111;
+    letter-spacing: -0.01em;
   }
 
-  .abp-blog {
-    background-image: url('/assets/images/getting-started/abp-blog-white.svg');
+  .title-divider {
+    width: 60px;
+    height: 3px;
+    background-color: var(--bh-brand-red);
+    border-radius: var(--bh-radius-full);
+    margin-top: 0.75rem;
   }
 
-  .logo-x {
-    background-image: url('/assets/images/getting-started/x-white.svg');
+  /* Amenities Cards */
+  .amenity-card {
+    background-color: #ffffff;
+    transition: all var(--bh-transition-speed);
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      border-color: var(--bh-brand-red-border) !important;
+    }
+
+    .amenity-icon-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: var(--bh-brand-red-subtle);
+      color: var(--bh-brand-red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: all var(--bh-transition-speed);
+    }
+
+    &:hover .amenity-icon-circle {
+      background-color: var(--bh-brand-red);
+      color: #ffffff;
+    }
   }
 
-  .abp-studio {
-    background-image: url('/assets/images/getting-started/abp-studio-white.svg');
-  }
+  /* Room Cards */
+  .room-card {
+    transition: all var(--bh-transition-speed);
 
-  .abp-suite {
-    background-image: url('/assets/images/getting-started/abp-suite-white.svg');
-  }
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+    }
 
-  .entity-famework-core {
-    background-image: url('/assets/images/getting-started/entity-famework-core.svg');
-  }
+    .room-img-wrapper {
+      height: 220px;
+      overflow: hidden;
 
-  .mongo-db {
-    background-image: url('/assets/images/getting-started/mongo-db.svg');
-  }
+      .room-img {
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+    }
 
-  .blazor {
-    background-image: url('/assets/images/getting-started/blazor.svg');
-  }
-
-  .angular {
-    background-image: url('/assets/images/getting-started/angular.svg');
-  }
-
-  .mvc-razor-pages {
-    background-image: url('/assets/images/getting-started/mvc-razor-pages.svg');
-  }
-}
-
-
-@media (min-width: 1199px) {
-  .h-lg-100 {
-    height: 100% !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .h-md-100 {
-    height: 100% !important;
+    &:hover .room-img {
+      transform: scale(1.05);
+    }
   }
 }

@@ -1,0 +1,167 @@
+<div class="bh-customer-shell">
+  <!-- Top Navigation Header -->
+  <header class="bh-customer-header">
+    <div class="container-fluid px-lg-5 d-flex align-items-center justify-content-between h-100">
+      <!-- Brand Logo -->
+      <a class="bh-brand-logo" routerLink="/">
+        <span class="logo-red">Booking</span>
+        <span class="logo-black">Hotel</span>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="d-none d-md-flex align-items-center gap-4 bh-nav-links">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="bh-nav-link">
+          {{ '::Menu:Home' | abpLocalization }}
+        </a>
+      </nav>
+
+      <!-- Right Action Controls -->
+      <div class="d-flex align-items-center gap-3">
+        <!-- Language Switcher Dropdown -->
+        <bh-language-switcher></bh-language-switcher>
+
+        <!-- Auth Actions / User Menu -->
+        @if (!isAuthenticated) {
+          <button type="button" class="btn btn-outline-dark btn-sm fw-semibold d-none d-sm-inline-block" (click)="login()">
+            {{ '::Auth:Login' | abpLocalization }}
+          </button>
+          <a routerLink="/auth/register" class="btn btn-bh-primary btn-sm">
+            {{ '::Auth:Register' | abpLocalization }}
+          </a>
+        } @else {
+          <div class="dropdown position-relative">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 user-avatar-btn"
+              (click)="toggleUserMenu()"
+            >
+              <i class="fa-solid fa-circle-user fa-lg text-secondary"></i>
+              <span class="d-none d-sm-inline fw-semibold">{{ userDisplayName || ('::Menu:Profile' | abpLocalization) }}</span>
+              <i class="fa-solid fa-chevron-down small"></i>
+            </button>
+
+            @if (isUserMenuOpen()) {
+              <div class="dropdown-menu dropdown-menu-end show shadow-sm user-dropdown-menu">
+                @if (userDisplayName) {
+                  <div class="px-3 py-2 border-bottom">
+                    <p class="mb-0 small fw-bold text-dark text-truncate">{{ userDisplayName }}</p>
+                    <p class="mb-0 text-muted small text-truncate" style="font-size: 0.75rem;">{{ currentUser?.email || '' }}</p>
+                  </div>
+                }
+
+                <!-- CHỈ hiển thị khi người dùng đăng nhập vào KHÔNG PHẢI là Customer (có vai trò Quản lý / Nhân sự) -->
+                @if (hasManagementRole) {
+                  <a [routerLink]="managementPortalUrl" class="dropdown-item fw-semibold text-primary py-2" (click)="isUserMenuOpen.set(false)">
+                    <i class="fa-solid fa-gauge-high me-2"></i>
+                    {{ '::Menu:Management' | abpLocalization }}
+                  </a>
+                  <div class="dropdown-divider"></div>
+                }
+
+                <button type="button" class="dropdown-item text-danger py-2" (click)="logout()">
+                  <i class="fa-solid fa-right-from-bracket me-2"></i>
+                  {{ '::Menu:Logout' | abpLocalization }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Mobile Menu Toggle Button -->
+        <button
+          type="button"
+          class="btn btn-sm btn-light d-md-none border"
+          (click)="toggleMobileMenu()"
+          aria-label="Toggle navigation"
+        >
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    @if (isMobileMenuOpen()) {
+      <div class="bh-mobile-menu d-md-none border-top p-3 bg-white shadow-sm">
+        <div class="d-flex flex-column gap-2">
+          <a routerLink="/" class="nav-link py-2" (click)="isMobileMenuOpen.set(false)">
+            <i class="fa-solid fa-house me-2"></i> {{ '::Menu:Home' | abpLocalization }}
+          </a>
+          @if (isAuthenticated && hasManagementRole) {
+            <a [routerLink]="managementPortalUrl" class="nav-link py-2 text-primary fw-semibold" (click)="isMobileMenuOpen.set(false)">
+              <i class="fa-solid fa-gauge-high me-2"></i> {{ '::Menu:Management' | abpLocalization }}
+            </a>
+          }
+          @if (!isAuthenticated) {
+            <hr class="my-2" />
+            <button type="button" class="btn btn-outline-dark btn-sm text-start" (click)="login(); isMobileMenuOpen.set(false)">
+              <i class="fa-solid fa-right-to-bracket me-2"></i> {{ '::Auth:Login' | abpLocalization }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- Main Viewport Router Outlet -->
+  <main class="bh-customer-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Customer Portal Footer -->
+  <footer class="bh-customer-footer">
+    <div class="container-fluid px-lg-5 py-5">
+      <div class="row g-4 justify-content-between">
+        <!-- Col 1: Brand Info -->
+        <div class="col-lg-4 col-md-6">
+          <div class="mb-3">
+            <a class="bh-brand-logo on-dark" routerLink="/">
+              <span class="logo-red">Booking</span>
+              <span class="logo-black">Hotel</span>
+            </a>
+          </div>
+          <p class="text-secondary small mb-3">
+            {{ '::Footer:AboutText' | abpLocalization }}
+          </p>
+          <div class="d-flex gap-3 social-icons text-secondary">
+            <a href="#" class="text-secondary"><i class="fa-brands fa-facebook fa-lg"></i></a>
+            <a href="#" class="text-secondary"><i class="fa-brands fa-instagram fa-lg"></i></a>
+            <a href="#" class="text-secondary"><i class="fa-brands fa-youtube fa-lg"></i></a>
+          </div>
+        </div>
+
+        <!-- Col 2: Quick Links -->
+        <div class="col-lg-2 col-md-3 col-6">
+          <h6 class="text-white fw-bold mb-3">{{ '::Footer:QuickLinks' | abpLocalization }}</h6>
+          <ul class="list-unstyled small footer-links">
+            <li class="mb-2"><a routerLink="/" class="text-secondary text-decoration-none">{{ '::Menu:Home' | abpLocalization }}</a></li>
+            <li class="mb-2"><a routerLink="/auth/login" class="text-secondary text-decoration-none">{{ '::Auth:Login' | abpLocalization }}</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Policies -->
+        <div class="col-lg-2 col-md-3 col-6">
+          <h6 class="text-white fw-bold mb-3">{{ '::Footer:PrivacyPolicy' | abpLocalization }}</h6>
+          <ul class="list-unstyled small footer-links">
+            <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">{{ '::Footer:PrivacyPolicy' | abpLocalization }}</a></li>
+            <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">{{ '::Footer:TermsOfService' | abpLocalization }}</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Contact -->
+        <div class="col-lg-3 col-md-6">
+          <h6 class="text-white fw-bold mb-3">{{ '::Footer:ContactUs' | abpLocalization }}</h6>
+          <p class="text-secondary small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i> Booking Hotel Plaza, Ha Noi, Vietnam</p>
+          <p class="text-secondary small mb-1"><i class="fa-solid fa-phone me-2 text-danger"></i> +84 (0) 24 3999 8888</p>
+          <p class="text-secondary small mb-1"><i class="fa-solid fa-envelope me-2 text-danger"></i> contact&#64;bookinghotel.com</p>
+        </div>
+      </div>
+
+      <div class="border-top border-secondary border-opacity-25 mt-4 pt-4 text-center text-secondary small">
+        <span>{{ currentYear }}© </span>
+        <span class="text-white fw-bold">Booking Hotel</span>.
+        <span> {{ '::Footer:AllRightsReserved' | abpLocalization }}</span>
+      </div>
+    </div>
+  </footer>
+</div>
+

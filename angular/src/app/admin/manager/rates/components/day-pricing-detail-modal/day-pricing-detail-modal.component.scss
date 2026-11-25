@@ -1,0 +1,58 @@
+.day-summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.summary-metric {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+
+  &.highlight {
+    border-color: #06b6d4;
+    background: #ecfeff;
+  }
+
+  .metric-label {
+    font-size: 0.74rem;
+    color: #64748b;
+  }
+
+  .metric-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+}
+
+.form-label {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.restriction-chip {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: #ffffff;
+
+  &.active {
+    border-color: #06b6d4;
+    background: #ecfeff;
+  }
+}

@@ -1,0 +1,153 @@
+<div class="hotel-profile-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Menu:ManagerHotelProfile' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Manager:HotelProfile:Subtitle' | abpLocalization }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage()" class="alert alert-success d-flex align-items-center">
+    <i class="fa-solid fa-circle-check me-2"></i>
+    <span>{{ successMessage() }}</span>
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading()">
+    <form [formGroup]="form" (ngSubmit)="saveProfile()">
+      <div class="profile-layout-grid">
+        <!-- CỘT 1: Thông tin cơ bản & Liên hệ -->
+        <div class="profile-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-circle-info text-primary"></i> {{ 'Manager:HotelProfile:GeneralInfo' | abpLocalization }}
+          </h2>
+
+          <div class="row g-3">
+            <!-- Tên cơ sở (Read-Only) -->
+            <div class="col-md-8">
+              <label class="form-label">{{ 'Manager:HotelProfile:HotelName' | abpLocalization }} (Read-Only)</label>
+              <input type="text" class="form-control read-only-field" formControlName="name" readonly />
+            </div>
+
+            <!-- Mã định danh khách sạn (Read-Only - Bất biến) -->
+            <div class="col-md-4">
+              <label class="form-label">{{ 'Manager:HotelProfile:HotelCode' | abpLocalization }} (Read-Only)</label>
+              <input type="text" class="form-control read-only-field font-monospace" formControlName="code" readonly />
+            </div>
+
+            <!-- Hạng sao & Số phòng (Read-Only) -->
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:HotelProfile:StarRating' | abpLocalization }}</label>
+              <input type="text" class="form-control read-only-field" [value]="form.get('starRating')?.value + ' ' + ('Manager:HotelProfile:StarUnit' | abpLocalization)" disabled />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:TotalRooms' | abpLocalization }}</label>
+              <input type="text" class="form-control read-only-field" [value]="form.get('roomCount')?.value + ' ' + ('Manager:HotelProfile:RoomsUnit' | abpLocalization)" disabled />
+            </div>
+
+            <!-- Địa chỉ chi nhánh (Editable) -->
+            <div class="col-md-8">
+              <label class="form-label">{{ 'Manager:HotelProfile:Address' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="address" />
+            </div>
+
+            <!-- Thành phố (Editable) -->
+            <div class="col-md-4">
+              <label class="form-label">{{ 'Manager:HotelProfile:City' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="city" />
+            </div>
+
+            <!-- Hotline liên hệ (Editable) -->
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:HotelProfile:Phone' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="phone" />
+            </div>
+
+            <!-- Email lễ tân (Editable) -->
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:HotelProfile:Email' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" formControlName="email" />
+            </div>
+
+            <!-- Giờ Check-in & Check-out -->
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:HotelProfile:StandardCheckIn' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" formControlName="checkInTime" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Manager:HotelProfile:StandardCheckOut' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" formControlName="checkOutTime" />
+            </div>
+          </div>
+        </div>
+
+        <!-- CỘT 2: Tiện ích & Quy định khách sạn -->
+        <div class="profile-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-bell-concierge text-warning"></i> {{ 'Manager:HotelProfile:AmenitiesAndRules' | abpLocalization }}
+          </h2>
+
+          <!-- Danh mục Tiện ích cơ sở (Amenities Selection) -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">{{ 'Manager:HotelProfile:Amenities' | abpLocalization }}</label>
+            <div class="amenities-selection-grid">
+              <span
+                *ngFor="let am of standardAmenities"
+                class="amenity-checkbox-chip"
+                [class.selected]="isAmenitySelected(am)"
+                (click)="toggleAmenity(am)">
+                <i class="fa-solid" [ngClass]="isAmenitySelected(am) ? 'fa-check-circle' : 'fa-circle'"></i>
+                {{ am.key | abpLocalization }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Mô tả khách sạn -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ 'Manager:HotelProfile:Description' | abpLocalization }}</label>
+            <textarea
+              class="form-control"
+              rows="4"
+              formControlName="description"
+              [placeholder]="'Manager:HotelProfile:DescriptionPlaceholder' | abpLocalization">
+            </textarea>
+          </div>
+
+          <!-- Quy định lưu trú (House Rules) -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">{{ 'Manager:HotelProfile:HouseRules' | abpLocalization }}</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              formControlName="houseRules"
+              [placeholder]="'Manager:HotelProfile:HouseRulesPlaceholder' | abpLocalization">
+            </textarea>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary px-4 fw-bold" [disabled]="form.invalid || isSaving()">
+              <i *ngIf="isSaving()" class="fa-solid fa-spinner fa-spin me-1"></i>
+              {{ 'Common:Save' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+</div>

@@ -1,0 +1,52 @@
+<div class="role-directory-page">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <h1 class="page-title">{{ 'Identity:RoleListTitle' | abpLocalization }}</h1>
+    <p class="page-subtitle">{{ 'Identity:RoleListSubtitle' | abpLocalization }}</p>
+  </div>
+
+  <!-- Tamper-Proof Alert Banner -->
+  <div class="tamper-proof-banner d-flex align-items-center gap-3 mb-4">
+    <div class="banner-icon">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="banner-text">
+      <strong>{{ 'Identity:RoleTamperProofTitle' | abpLocalization }}</strong>
+      <p class="mb-0 text-muted small">
+        {{ 'Identity:StaticRoleNotice' | abpLocalization }} {{ 'Identity:RoleTamperProofDesc' | abpLocalization }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Role Grid Cards -->
+  <div class="row g-4">
+    <div class="col-lg-4 col-md-6" *ngFor="let role of standardRoles">
+      <div class="role-card">
+        <div class="card-header-line d-flex justify-content-between align-items-center mb-3">
+          <div class="role-icon-box">
+            <i [class]="role.icon"></i>
+          </div>
+          <div class="role-badges d-flex gap-2">
+            <span class="badge" [ngClass]="role.badgeClass">{{ role.scope }}</span>
+            <span class="badge bg-static" [title]="'Identity:StaticRoleNotice' | abpLocalization">
+              <i class="fa-solid fa-lock me-1"></i>Static
+            </span>
+          </div>
+        </div>
+
+        <h3 class="role-title mb-2">{{ role.nameKey | abpLocalization }}</h3>
+        <p class="role-desc text-muted mb-3">{{ role.descriptionKey | abpLocalization }}</p>
+
+        <div class="card-footer-line d-flex justify-content-between align-items-center pt-3 border-top">
+          <div class="permissions-meta small text-muted">
+            <i class="fa-solid fa-key me-1 text-cyan"></i>
+            <span>{{ 'Identity:StandardPermissionsCount' | abpLocalization: (role.permissionsCount + '') }}</span>
+          </div>
+          <span class="read-only-tag small">
+            <i class="fa-solid fa-eye me-1"></i>{{ 'Common:ReadOnly' | abpLocalization }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

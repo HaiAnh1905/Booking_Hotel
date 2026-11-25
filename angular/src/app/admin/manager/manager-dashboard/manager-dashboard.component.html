@@ -1,0 +1,271 @@
+<div class="manager-dashboard-page">
+  <!-- Tiêu đề trang & Cơ sở đang hoạt động -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Menu:ManagerDashboard' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'ManagerDashboard:Subtitle' | abpLocalization }}</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/manager/rooms" class="btn btn-outline" [queryParams]="{ hotelId: propertyService.currentHotelId() }">
+        <i class="fa-solid fa-bed"></i> {{ 'Manager:Rooms' | abpLocalization }}
+      </a>
+      <a routerLink="/manager/bookings" class="btn btn-primary" [queryParams]="{ hotelId: propertyService.currentHotelId() }">
+        <i class="fa-solid fa-calendar-check"></i> {{ 'Manager:Bookings' | abpLocalization }}
+      </a>
+      <a routerLink="/manager/approvals" class="btn btn-warning" [queryParams]="{ hotelId: propertyService.currentHotelId() }">
+        <i class="fa-solid fa-clipboard-check"></i> {{ 'Menu:ManagerApprovals' | abpLocalization }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container py-5 text-center">
+    <i class="fa-solid fa-spinner fa-spin fa-2x text-primary"></i>
+    <p class="mt-2 text-muted">{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading()">
+    <!-- Lưới chỉ số vận hành chi nhánh (Operational KPIs) -->
+    <div class="metrics-grid">
+      <!-- 1. Tỷ lệ lấp đầy (Occupancy Rate) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #0284c7; background-color: rgba(2, 132, 199, 0.1);">
+          <i class="fa-solid fa-chart-pie"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:OccupancyRate' | abpLocalization }}</span>
+          <span class="metric-value">{{ kpis()?.occupancyRate || 0 }}%</span>
+          <span class="metric-sub">
+            {{ kpis()?.occupiedRooms || 0 }} / {{ kpis()?.availableInventory || 0 }} {{ 'Manager:TotalRooms' | abpLocalization | lowercase }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Phòng trống sẵn sàng bán (Available Rooms) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #16a34a; background-color: rgba(22, 163, 74, 0.1);">
+          <i class="fa-solid fa-door-open"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:AvailableRooms' | abpLocalization }}</span>
+          <span class="metric-value text-success">{{ kpis()?.availableRooms || 0 }}</span>
+          <span class="metric-sub">{{ 'Manager:AvailableInventory' | abpLocalization }}: {{ kpis()?.availableInventory || 0 }}</span>
+        </div>
+      </div>
+
+      <!-- 3. Khách nhận phòng hôm nay (Today Arrivals) -->
+      <div class="metric-card">
+        <div class="metric-icon-box" style="color: #7c3aed; background-color: rgba(124, 58, 237, 0.1);">
+          <i class="fa-solid fa-plane-arrival"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:TodayArrivals' | abpLocalization }}</span>
+          <span class="metric-value">{{ kpis()?.todayArrivalsCount || 0 }}</span>
+          <span class="metric-sub">{{ 'Manager:TodayDepartures' | abpLocalization }}: {{ kpis()?.todayDeparturesCount || 0 }}</span>
+        </div>
+      </div>
+
+      <!-- 4. Việc cần xử lý gấp (Action Items) -->
+      <div class="metric-card" [class.has-alert]="(kpis()?.actionItemsCount || 0) > 0">
+        <div class="metric-icon-box" style="color: #dc2626; background-color: rgba(220, 38, 38, 0.1);">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-title">{{ 'Manager:ActionItems' | abpLocalization }}</span>
+          <span class="metric-value text-danger">{{ kpis()?.actionItemsCount || 0 }}</span>
+          <span class="metric-sub">{{ 'Manager:PendingConfirmationBookings' | abpLocalization }}: {{ actionItems()?.pendingConfirmationBookings || 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phân rã Doanh thu vận hành (Revenue Breakdown) -->
+    <div class="revenue-summary-row">
+      <div class="revenue-card">
+        <span class="rev-label"><i class="fa-solid fa-calendar-day"></i> {{ 'Manager:Reports:RoomRevenue' | abpLocalization }} (Hôm nay)</span>
+        <span class="rev-value">{{ (kpis()?.todayRoomRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+      </div>
+      <div class="revenue-card">
+        <span class="rev-label"><i class="fa-solid fa-hand-holding-dollar"></i> {{ 'Manager:Reports:CollectedRevenue' | abpLocalization }} (Hôm nay)</span>
+        <span class="rev-value text-success">{{ (kpis()?.todayCollectedRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+      </div>
+      <div class="revenue-card">
+        <span class="rev-label"><i class="fa-solid fa-calendar-week"></i> {{ 'Manager:Reports:TotalBilledRevenue' | abpLocalization }} (7 ngày)</span>
+        <span class="rev-value">{{ (kpis()?.weekRoomRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+      </div>
+      <div class="revenue-card">
+        <span class="rev-label"><i class="fa-solid fa-calendar"></i> {{ 'Manager:Reports:TotalBilledRevenue' | abpLocalization }} (30 ngày)</span>
+        <span class="rev-value text-primary">{{ (kpis()?.monthRoomRevenue || 0) | number:'1.0-0' }} VNĐ</span>
+      </div>
+    </div>
+
+    <!-- Tình trạng buồng phòng & Việc cần xử lý gấp -->
+    <div class="content-split">
+      <!-- Phân bố trạng thái phòng -->
+      <div class="dashboard-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <i class="fa-solid fa-bed"></i> {{ 'ManagerDashboard:RoomStatusSummary' | abpLocalization }}
+          </h2>
+          <span class="total-rooms-label">{{ 'Manager:TotalRooms' | abpLocalization }}: {{ kpis()?.totalRooms || 0 }}</span>
+        </div>
+        <div class="panel-body">
+          <div class="room-status-grid">
+            <div class="status-box box-available">
+              <span class="num">{{ kpis()?.availableRooms || 0 }}</span>
+              <span class="lbl">{{ 'Manager:AvailableRooms' | abpLocalization }}</span>
+            </div>
+            <div class="status-box box-occupied">
+              <span class="num">{{ kpis()?.occupiedRooms || 0 }}</span>
+              <span class="lbl">{{ 'Manager:OccupiedRooms' | abpLocalization }}</span>
+            </div>
+            <div class="status-box box-reserved">
+              <span class="num">{{ kpis()?.reservedRooms || 0 }}</span>
+              <span class="lbl">{{ 'Manager:ReservedRooms' | abpLocalization }}</span>
+            </div>
+            <div class="status-box box-maintenance">
+              <span class="num">{{ kpis()?.maintenanceRooms || 0 }}</span>
+              <span class="lbl">{{ 'Manager:MaintenanceRooms' | abpLocalization }}</span>
+            </div>
+            <div class="status-box box-outofservice">
+              <span class="num">{{ kpis()?.outOfServiceRooms || 0 }}</span>
+              <span class="lbl">{{ 'Manager:OutOfServiceRooms' | abpLocalization }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hạng mục cần xử lý gấp (Action Items Panel) -->
+      <div class="dashboard-panel">
+        <div class="panel-header">
+          <h2 class="panel-title text-danger">
+            <i class="fa-solid fa-bell"></i> {{ 'Manager:ActionItems' | abpLocalization }}
+          </h2>
+        </div>
+        <div class="panel-body p-0">
+          <ul class="action-items-list">
+            <li class="action-item">
+              <div class="action-icon badge-warning">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <div class="action-content">
+                <span class="action-title">{{ 'Manager:PendingConfirmationBookings' | abpLocalization }}</span>
+                <span class="action-meta">{{ actionItems()?.pendingConfirmationBookings || 0 }} booking đang chờ xác nhận</span>
+              </div>
+              <a routerLink="/manager/bookings" [queryParams]="{ hotelId: propertyService.currentHotelId() }" class="btn btn-sm btn-outline-warning">
+                {{ 'Common:Process' | abpLocalization }}
+              </a>
+            </li>
+            <li class="action-item">
+              <div class="action-icon badge-info">
+                <i class="fa-solid fa-key"></i>
+              </div>
+              <div class="action-content">
+                <span class="action-title">{{ 'Manager:UnassignedArrivalsToday' | abpLocalization }}</span>
+                <span class="action-meta">{{ actionItems()?.unassignedArrivalsToday || 0 }} khách đến hôm nay chưa xếp phòng</span>
+              </div>
+              <a routerLink="/manager/bookings" [queryParams]="{ hotelId: propertyService.currentHotelId() }" class="btn btn-sm btn-outline-info">
+                {{ 'Manager:Booking:AssignRoom' | abpLocalization }}
+              </a>
+            </li>
+            <li class="action-item">
+              <div class="action-icon badge-secondary">
+                <i class="fa-solid fa-broom"></i>
+              </div>
+              <div class="action-content">
+                <span class="action-title">{{ 'Manager:OverdueHousekeepingRooms' | abpLocalization }}</span>
+                <span class="action-meta">{{ actionItems()?.overdueHousekeepingRooms || 0 }} phòng cần dọn dẹp</span>
+              </div>
+              <a routerLink="/manager/rooms" [queryParams]="{ hotelId: propertyService.currentHotelId() }" class="btn btn-sm btn-outline-secondary">
+                {{ 'Manager:Rooms' | abpLocalization }}
+              </a>
+            </li>
+            <li class="action-item" *ngIf="(actionItems()?.openComplaintsNearSla || 0) > 0">
+              <div class="action-icon badge-danger">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div class="action-content">
+                <span class="action-title text-danger">{{ 'Manager:OpenComplaintsNearSla' | abpLocalization }}</span>
+                <span class="action-meta text-danger">{{ actionItems()?.openComplaintsNearSla }} khiếu nại gần vượt hạn SLA 48h</span>
+              </div>
+              <a routerLink="/manager/feedback" [queryParams]="{ hotelId: propertyService.currentHotelId() }" class="btn btn-sm btn-danger">
+                {{ 'Common:View' | abpLocalization }}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bảng khách sắp đến trong ngày (Today Arrivals) -->
+    <div class="dashboard-panel mt-4">
+      <div class="panel-header d-flex justify-content-between align-items-center">
+        <h2 class="panel-title">
+          <i class="fa-solid fa-plane-arrival text-primary"></i> {{ 'Manager:TodayArrivals' | abpLocalization }}
+        </h2>
+        <a routerLink="/manager/bookings" [queryParams]="{ hotelId: propertyService.currentHotelId() }" class="view-all-link">
+          {{ 'Common:ViewAll' | abpLocalization }} <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="panel-body p-0">
+        <div class="table-responsive">
+          <table class="table modern-table mb-0">
+            <thead>
+              <tr>
+                <th>{{ 'Manager:Booking:Code' | abpLocalization }}</th>
+                <th>{{ 'Manager:Guest:Name' | abpLocalization }}</th>
+                <th>{{ 'Manager:Room:Type' | abpLocalization }}</th>
+                <th>{{ 'Manager:Booking:AssignedRoom' | abpLocalization }}</th>
+                <th>{{ 'Manager:Booking:PaymentStatus' | abpLocalization }}</th>
+                <th>{{ 'Manager:Booking:CheckInTime' | abpLocalization }}</th>
+                <th>{{ 'Manager:Booking:SpecialRequests' | abpLocalization }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of todayArrivals()">
+                <td>
+                  <span class="booking-code">{{ a.bookingCode }}</span>
+                </td>
+                <td>
+                  <div class="guest-info">
+                    <span class="guest-name">{{ a.guestFullName }}</span>
+                    <span class="guest-phone text-muted">{{ a.guestPhone }}</span>
+                  </div>
+                </td>
+                <td>{{ a.roomTypeName }}</td>
+                <td>
+                  <span *ngIf="a.assignedRoomNumber" class="badge-room assigned">
+                    <i class="fa-solid fa-door-closed"></i> {{ a.assignedRoomNumber }}
+                  </span>
+                  <span *ngIf="!a.assignedRoomNumber" class="badge-room unassigned text-warning">
+                    <i class="fa-solid fa-circle-question"></i> {{ 'Manager:Booking:RoomAssignment_Unassigned' | abpLocalization }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="getPaymentBadgeClass(a.paymentStatus)">
+                    {{ getPaymentStatusKey(a.paymentStatus) | abpLocalization }}
+                  </span>
+                </td>
+                <td>{{ a.estimatedArrivalTime }}</td>
+                <td>
+                  <span class="text-truncate d-inline-block" style="max-width: 200px;" [title]="a.specialRequests || ''">
+                    {{ a.specialRequests || '-' }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="todayArrivals().length === 0">
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+                  {{ 'Common:NoData' | abpLocalization }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

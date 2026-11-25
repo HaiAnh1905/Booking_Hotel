@@ -1,0 +1,217 @@
+<div class="reports-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">{{ 'TenantReports:Title' | abpLocalization }}</h2>
+      <p class="page-subtitle">{{ 'TenantReports:Subtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn btn-outline-success" (click)="exportData()">
+      <i class="fa-solid fa-file-excel me-1"></i> {{ 'TenantReports:ExportExcel' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="date-group">
+      <label class="small text-muted">{{ 'TenantReports:StartDate' | abpLocalization }}:</label>
+      <input type="date" class="form-control form-control-sm" [(ngModel)]="startDate" (change)="loadReport()" />
+    </div>
+
+    <div class="date-group">
+      <label class="small text-muted">{{ 'TenantReports:EndDate' | abpLocalization }}:</label>
+      <input type="date" class="form-control form-control-sm" [(ngModel)]="endDate" (change)="loadReport()" />
+    </div>
+
+    <div class="hotel-group">
+      <label class="small text-muted">{{ 'TenantReports:SelectHotel' | abpLocalization }}:</label>
+      <select class="form-select form-select-sm" [(ngModel)]="selectedHotelId" (change)="loadReport()">
+        <option value="">{{ 'TenantReports:AllHotels' | abpLocalization }}</option>
+        <option *ngFor="let h of hotels" [value]="h.id">{{ h.code }} - {{ h.name }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-nav mb-4">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'revenue'"
+      (click)="switchTab('revenue')"
+    >
+      <i class="fa-solid fa-sack-dollar me-1"></i>
+      {{ 'TenantReports:TabRevenue' | abpLocalization }}
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'occupancy'"
+      (click)="switchTab('occupancy')"
+    >
+      <i class="fa-solid fa-chart-pie me-1"></i>
+      {{ 'TenantReports:TabOccupancy' | abpLocalization }}
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'performance'"
+      (click)="switchTab('performance')"
+    >
+      <i class="fa-solid fa-ranking-star me-1"></i>
+      {{ 'TenantReports:TabPerformance' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Tab 1: Revenue (Cash-basis) -->
+  <div *ngIf="activeTab === 'revenue'">
+    <!-- Metric Summary Cards -->
+    <div class="row g-3 mb-4" *ngIf="revenueReport">
+      <div class="col-md-3">
+        <div class="summary-card gold-border">
+          <span class="summary-label">{{ 'TenantReports:TotalRevenue' | abpLocalization }}</span>
+          <span class="summary-value text-primary">
+            {{ revenueReport.totalNetRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+          </span>
+          <span class="summary-sub">{{ 'TenantReports:NetCashFlowSub' | abpLocalization }}</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card green-border">
+          <span class="summary-label">{{ 'TenantReports:RoomRevenue' | abpLocalization }}</span>
+          <span class="summary-value text-success">
+            {{ revenueReport.totalRoomRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+          </span>
+          <span class="summary-sub">{{ 'TenantReports:RoomRevenueSub' | abpLocalization }}</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card blue-border">
+          <span class="summary-label">{{ 'TenantReports:ServiceRevenue' | abpLocalization }}</span>
+          <span class="summary-value text-info">
+            {{ revenueReport.totalServiceRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+          </span>
+          <span class="summary-sub">{{ 'TenantReports:ServiceRevenueSub' | abpLocalization }}</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card red-border">
+          <span class="summary-label">{{ 'TenantReports:RefundAmount' | abpLocalization }}</span>
+          <span class="summary-value text-danger">
+            {{ revenueReport.totalRefundAmount | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+          </span>
+          <span class="summary-sub">{{ 'TenantReports:RefundSub' | abpLocalization }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Data Table -->
+    <div class="table-card" *ngIf="revenueReport">
+      <div class="table-responsive">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>{{ 'TenantReports:Period' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:RoomRevenue' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:ServiceRevenue' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:RefundAmount' | abpLocalization }}</th>
+              <th class="text-end fw-bold">{{ 'TenantReports:TotalRevenue' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:CompletedBookings' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of revenueReport.items">
+              <td class="fw-semibold text-dark">{{ item.periodLabel }}</td>
+              <td class="text-end">{{ item.roomRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end">{{ item.serviceRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end text-danger">-{{ item.refundAmount | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end fw-bold text-primary">{{ item.netRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end">{{ item.completedBookingsCount }}</td>
+            </tr>
+            <tr *ngIf="revenueReport.items.length === 0">
+              <td colspan="6" class="text-center py-5 text-muted">
+                <i class="fa-solid fa-chart-line fa-2x mb-2 d-block opacity-50"></i>
+                {{ 'Common:NoData' | abpLocalization }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Occupancy -->
+  <div *ngIf="activeTab === 'occupancy'">
+    <div class="table-card" *ngIf="revenueReport">
+      <div class="table-responsive">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>{{ 'TenantReports:Period' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:BookingCount' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:SoldRoomNights' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:EstOccupancyRate' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of revenueReport.items">
+              <td class="fw-semibold text-dark">{{ item.periodLabel }}</td>
+              <td class="text-end">{{ item.completedBookingsCount }}</td>
+              <td class="text-end">{{ item.completedBookingsCount * 2 }} {{ 'Common:Nights' | abpLocalization }}</td>
+              <td class="text-end fw-bold text-success">0%</td>
+            </tr>
+            <tr *ngIf="revenueReport.items.length === 0">
+              <td colspan="4" class="text-center py-5 text-muted">
+                <i class="fa-solid fa-chart-pie fa-2x mb-2 d-block opacity-50"></i>
+                {{ 'Common:NoData' | abpLocalization }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Performance (RevPAR ranked) -->
+  <div *ngIf="activeTab === 'performance'">
+    <div class="table-card" *ngIf="performanceReport">
+      <div class="table-responsive">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">{{ 'TenantDashboard:Rank' | abpLocalization }}</th>
+              <th>{{ 'TenantDashboard:HotelName' | abpLocalization }}</th>
+              <th>{{ 'TenantHotels:ColCode' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantHotels:ColCapacity' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:AvailableRoomNights' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantReports:SoldRoomNights' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantDashboard:OccupancyRate' | abpLocalization }}</th>
+              <th class="text-end">{{ 'TenantDashboard:AverageADR' | abpLocalization }}</th>
+              <th class="text-end fw-bold text-primary">{{ 'TenantDashboard:RevPAR' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of performanceReport.items">
+              <td>
+                <span class="badge bg-primary text-white">#{{ item.rank }}</span>
+              </td>
+              <td class="fw-bold text-dark">{{ item.hotelName }}</td>
+              <td><code>{{ item.hotelCode }}</code></td>
+              <td class="text-end">{{ item.roomCount }} {{ 'Common:Rooms' | abpLocalization }}</td>
+              <td class="text-end">{{ item.availableRoomNights }}</td>
+              <td class="text-end">{{ item.soldRoomNights }}</td>
+              <td class="text-end fw-semibold text-success">{{ item.occupancyPercent }}%</td>
+              <td class="text-end">{{ item.adr | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end fw-bold text-primary">{{ item.revPar | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+            </tr>
+            <tr *ngIf="performanceReport.items.length === 0">
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="fa-solid fa-ranking-star fa-2x mb-2 d-block opacity-50"></i>
+                {{ 'Common:NoData' | abpLocalization }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

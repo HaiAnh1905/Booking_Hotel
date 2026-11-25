@@ -1,0 +1,219 @@
+<div class="frontdesk-checkinout-page">
+  <div class="page-header-bar">
+    <div>
+      <h1 class="page-title">{{ 'Frontdesk:CheckInOutTitle' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Frontdesk:CheckInOutSubtitle' | abpLocalization }}</p>
+    </div>
+
+    <div class="header-tools">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          [placeholder]="'Frontdesk:SearchReservationPlaceholder' | abpLocalization"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          (keyup.enter)="loadData()" />
+      </div>
+      <button type="button" class="btn-frontdesk-outline" (click)="loadData()">
+        <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'checkin'"
+      (click)="switchTab('checkin')">
+      <i class="fa-solid fa-user-check"></i>
+      {{ 'Frontdesk:TabCheckIn' | abpLocalization }}
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'checkout'"
+      (click)="switchTab('checkout')">
+      <i class="fa-solid fa-door-open"></i>
+      {{ 'Frontdesk:TabCheckOut' | abpLocalization }}
+    </button>
+  </div>
+
+  <div *ngIf="isLoading()" class="state-card">
+    <bh-loading-spinner></bh-loading-spinner>
+  </div>
+
+  <!-- TAB 1: CHECK-IN -->
+  <ng-container *ngIf="!isLoading() && activeTab() === 'checkin'">
+    <div *ngIf="checkInList().length === 0" class="state-card">
+      <bh-empty-state
+        iconClass="fa-solid fa-user-check"
+        titleKey="Frontdesk:EmptyCheckInTitle"
+        descriptionKey="Frontdesk:EmptyCheckInDesc">
+      </bh-empty-state>
+    </div>
+
+    <div *ngIf="checkInList().length > 0" class="cards-grid">
+      <div *ngFor="let item of checkInList()" class="stay-card">
+        <div class="card-top">
+          <span class="booking-code">{{ item.bookingCode }}</span>
+          <span *ngIf="item.assignedRoomNumber" class="room-pill">{{ item.assignedRoomNumber }}</span>
+          <span *ngIf="!item.assignedRoomNumber" class="unassigned-pill">{{ 'Frontdesk:Unassigned' | abpLocalization }}</span>
+        </div>
+
+        <div class="guest-name">{{ item.guestFullName }}</div>
+        <div class="meta-line"><i class="fa-solid fa-phone"></i> {{ item.guestPhone }}</div>
+        <div class="meta-line"><i class="fa-solid fa-bed"></i> {{ item.roomTypeName || '—' }}</div>
+        <div class="meta-line">
+          <i class="fa-regular fa-calendar"></i>
+          {{ item.checkInDate | date:'dd/MM/yyyy' }} → {{ item.checkOutDate | date:'dd/MM/yyyy' }}
+        </div>
+
+        <div class="card-footer-actions">
+          <button type="button" class="btn-frontdesk-primary w-100" (click)="openCheckInModal(item)">
+            <i class="fa-solid fa-user-check"></i> {{ 'Frontdesk:CheckInButton' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- TAB 2: CHECK-OUT -->
+  <ng-container *ngIf="!isLoading() && activeTab() === 'checkout'">
+    <div *ngIf="checkOutList().length === 0" class="state-card">
+      <bh-empty-state
+        iconClass="fa-solid fa-door-open"
+        titleKey="Frontdesk:EmptyCheckOutTitle"
+        descriptionKey="Frontdesk:EmptyCheckOutDesc">
+      </bh-empty-state>
+    </div>
+
+    <div *ngIf="checkOutList().length > 0" class="cards-grid">
+      <div *ngFor="let item of checkOutList()" class="stay-card inhouse-card">
+        <div class="card-top">
+          <span class="booking-code">{{ item.bookingCode }}</span>
+          <span *ngIf="item.assignedRoomNumber" class="room-pill occupied">{{ item.assignedRoomNumber }}</span>
+        </div>
+
+        <div class="guest-name">{{ item.guestFullName }}</div>
+        <div class="meta-line"><i class="fa-solid fa-phone"></i> {{ item.guestPhone }}</div>
+        <div class="meta-line"><i class="fa-solid fa-id-card"></i> {{ item.guestIdentityNumberMasked || '—' }}</div>
+        <div class="meta-line">
+          <i class="fa-regular fa-calendar"></i>
+          {{ item.checkInDate | date:'dd/MM/yyyy' }} → {{ item.checkOutDate | date:'dd/MM/yyyy' }}
+        </div>
+        <div class="meta-line" *ngIf="item.actualCheckInTime">
+          <i class="fa-regular fa-clock"></i>
+          {{ 'Frontdesk:ActualCheckIn' | abpLocalization }}: {{ item.actualCheckInTime | date:'dd/MM HH:mm' }}
+        </div>
+
+        <div class="card-footer-actions">
+          <button type="button" class="btn-checkout-sm w-100" (click)="openCheckOutModal(item)">
+            <i class="fa-solid fa-door-open"></i> {{ 'Frontdesk:CheckOutButton' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- CHECK-IN VERIFICATION MODAL -->
+  <bh-modal
+    [isOpen]="isCheckInModalOpen()"
+    [config]="checkInModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitCheckIn()"
+    (cancel)="isCheckInModalOpen.set(false)">
+    <div class="modal-form" *ngIf="activeBooking() as b">
+      <div *ngIf="isDateDifferentFromToday(b.checkInDate)" class="alert-warning-box">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ 'Frontdesk:EarlyCheckInWarning' | abpLocalization: ((b.checkInDate | date:'dd/MM/yyyy') || '') }}
+      </div>
+
+      <div *ngIf="b.assignedRoomId && !b.assignedRoomIsReady" class="alert-warning-box">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        {{ 'Frontdesk:AssignedRoomNotReadyWarning' | abpLocalization }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:SelectAvailableRoom' | abpLocalization }} <span class="text-danger">*</span></label>
+        <div *ngIf="availableRooms().length === 0" class="alert-muted">
+          {{ 'Frontdesk:NoAvailableRooms' | abpLocalization }}
+        </div>
+        <bh-searchable-select
+          *ngIf="availableRooms().length > 0"
+          [options]="roomOptions()"
+          [ngModel]="checkInRoomId()"
+          (ngModelChange)="checkInRoomId.set($event)">
+        </bh-searchable-select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColFullName' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [ngModel]="checkInGuestName()" (ngModelChange)="checkInGuestName.set($event)" />
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">{{ 'Frontdesk:ColPhone' | abpLocalization }} <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" [ngModel]="checkInGuestPhone()" (ngModelChange)="checkInGuestPhone.set($event)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ 'Frontdesk:ColEmail' | abpLocalization }}</label>
+          <input type="email" class="form-control" [ngModel]="checkInGuestEmail()" (ngModelChange)="checkInGuestEmail.set($event)" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:IdentityNumber' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          [placeholder]="'Frontdesk:IdentityInputPlaceholder' | abpLocalization"
+          [ngModel]="checkInIdentityNumber()"
+          (ngModelChange)="checkInIdentityNumber.set($event)" />
+        <small class="form-hint">{{ 'Frontdesk:IdentityMaskHint' | abpLocalization }}</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:FrontdeskNotes' | abpLocalization }}</label>
+        <textarea rows="2" class="form-control" [ngModel]="checkInNotes()" (ngModelChange)="checkInNotes.set($event)"></textarea>
+      </div>
+    </div>
+  </bh-modal>
+
+  <!-- CHECK-OUT MODAL -->
+  <bh-modal
+    [isOpen]="isCheckOutModalOpen()"
+    [config]="checkOutModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitCheckOut()"
+    (cancel)="isCheckOutModalOpen.set(false)">
+    <div class="modal-form" *ngIf="activeBooking() as b">
+      <div *ngIf="isDateDifferentFromToday(b.checkOutDate)" class="alert-warning-box">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ 'Frontdesk:EarlyLateCheckOutWarning' | abpLocalization: ((b.checkOutDate | date:'dd/MM/yyyy') || '') }}
+      </div>
+
+      <div class="summary-box">
+        <div class="sum-row"><span>{{ 'Frontdesk:ColBookingCode' | abpLocalization }}</span><strong>{{ b.bookingCode }}</strong></div>
+        <div class="sum-row"><span>{{ 'Frontdesk:ColGuest' | abpLocalization }}</span><strong>{{ b.guestFullName }}</strong></div>
+        <div class="sum-row"><span>{{ 'Approvals:RoomNumber' | abpLocalization }}</span><strong>{{ b.assignedRoomNumber || '—' }}</strong></div>
+        <div class="sum-row"><span>{{ 'Frontdesk:TotalAmount' | abpLocalization }}</span><strong>{{ b.totalAmount | number }} ₫</strong></div>
+        <div class="sum-row"><span>{{ 'Frontdesk:PaymentStatusLabel' | abpLocalization }}</span><strong>{{ ('Frontdesk:PaymentStatus_' + b.paymentStatus) | abpLocalization }}</strong></div>
+      </div>
+
+      <div class="alert-info-box">
+        <i class="fa-solid fa-circle-info"></i>
+        {{ 'Frontdesk:CheckOutRoomReadyNote' | abpLocalization }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:FrontdeskNotes' | abpLocalization }}</label>
+        <textarea rows="2" class="form-control" [ngModel]="checkOutNotes()" (ngModelChange)="checkOutNotes.set($event)"></textarea>
+      </div>
+    </div>
+  </bh-modal>
+</div>

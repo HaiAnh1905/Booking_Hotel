@@ -1,0 +1,114 @@
+<div class="tenant-admin-shell" [class.collapsed]="isCollapsed()">
+  <div 
+    class="mobile-backdrop" 
+    *ngIf="isMobileSidebarOpen()" 
+    (click)="toggleMobileSidebar()">
+  </div>
+
+  <!-- Sidebar Phân hệ Quản trị Chuỗi (Corporate Executive Dashboard) -->
+  <aside class="tenant-sidebar" [class.mobile-open]="isMobileSidebarOpen()">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-hotel brand-icon"></i>
+        <div class="brand-text" *ngIf="!isCollapsed()">
+          <span class="brand-name">Booking Hotel</span>
+          <span class="chain-badge">
+            <i class="fa-solid fa-crown"></i> {{ 'Tenant:ChainBadge' | abpLocalization }}
+          </span>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        class="collapse-btn" 
+        (click)="toggleSidebar()" 
+        [title]="'Common:CollapseSidebar' | abpLocalization">
+        <i class="fa-solid" [ngClass]="isCollapsed() ? 'fa-angles-right' : 'fa-angles-left'"></i>
+      </button>
+    </div>
+
+    <!-- Danh mục Menu Quản trị Chuỗi -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li *ngFor="let item of menuItems()" class="nav-item">
+          <a 
+            [routerLink]="item.route" 
+            routerLinkActive="active" 
+            [routerLinkActiveOptions]="{ exact: item.route === '/tenant/dashboard' }"
+            class="nav-link"
+            (click)="isMobileSidebarOpen.set(false)"
+            [title]="item.labelKey | abpLocalization">
+            <i [class]="item.icon + ' nav-icon'"></i>
+            <span class="nav-label" *ngIf="!isCollapsed()">{{ item.labelKey | abpLocalization }}</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Chân Sidebar: Thông tin Tenant -->
+    <div class="sidebar-footer" *ngIf="!isCollapsed()">
+      <div class="tenant-meta">
+        <span class="tenant-name"><i class="fa-solid fa-circle-check text-success"></i> {{ currentTenantName() }}</span>
+        <span class="tenant-scope">{{ 'Tenant:ScaleInfo' | abpLocalization }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Vùng nội dung chính -->
+  <div class="main-wrapper">
+    <!-- Topbar Chuỗi -->
+    <header class="tenant-topbar">
+      <div class="topbar-left">
+        <button 
+          type="button" 
+          class="mobile-menu-btn" 
+          (click)="toggleMobileSidebar()" 
+          [title]="'Common:Menu' | abpLocalization">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="portal-indicator">
+          <span class="portal-badge-amber">
+            <i class="fa-solid fa-briefcase"></i> {{ 'Portal:TenantAdmin' | abpLocalization }}
+          </span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <bh-language-switcher></bh-language-switcher>
+
+        <div class="user-dropdown-container">
+          <button 
+            type="button" 
+            class="user-btn" 
+            (click)="toggleUserMenu()"
+            [attr.aria-expanded]="isUserMenuOpen()">
+            <div class="user-avatar">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <span class="user-role-label">{{ 'Role:TenantAdmin' | abpLocalization }}</span>
+            <i class="fa-solid fa-chevron-down caret-icon"></i>
+          </button>
+
+          <div class="user-menu-dropdown" *ngIf="isUserMenuOpen()">
+            <div class="user-menu-header">
+              <div class="user-name">{{ currentUserName() || ('Role:TenantAdmin' | abpLocalization) }}</div>
+              <div class="user-email">{{ currentUserEmail() }}</div>
+            </div>
+            <hr class="dropdown-divider" />
+            <a routerLink="/auth/change-password" class="dropdown-item" (click)="toggleUserMenu()">
+              <i class="fa-solid fa-key"></i> {{ 'Common:ChangePassword' | abpLocalization }}
+            </a>
+            <hr class="dropdown-divider" />
+            <button type="button" class="dropdown-item text-danger" (click)="logout()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> {{ 'Common:Logout' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+

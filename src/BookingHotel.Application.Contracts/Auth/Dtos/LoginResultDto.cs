@@ -17,6 +17,7 @@ public class LoginResultDto
     public Guid? RegistrationToken { get; set; }
     public string? Email { get; set; }
     public string? PrefilledName { get; set; }
+    public bool ShouldChangePassword { get; set; }
 }
 
 

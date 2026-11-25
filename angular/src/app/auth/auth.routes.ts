@@ -27,5 +27,9 @@ export const AUTH_ROUTES: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./reset-password/reset-password.component').then(c => c.ResetPasswordComponent),
   },
+  {
+    path: 'change-password',
+    loadComponent: () => import('./change-password/change-password.component').then(c => c.ChangePasswordComponent),
+  },
 ];
 

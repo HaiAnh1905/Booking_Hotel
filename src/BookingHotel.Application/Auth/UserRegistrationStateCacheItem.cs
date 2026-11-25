@@ -9,6 +9,7 @@ public class UserRegistrationStateCacheItem
     public string? RawPassword { get; set; }
     public string? GoogleId { get; set; }
     public string? FullName { get; set; }
+    public string? UserName { get; set; }
     public string? PhoneNumber { get; set; }
     public RegistrationStep CurrentStep { get; set; }
     public DateTime CreatedAt { get; set; }

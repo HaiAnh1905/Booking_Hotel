@@ -1,0 +1,139 @@
+<div class="manager-approvals-page">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Approvals:Title' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Approvals:Subtitle' | abpLocalization }}</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="loadTickets()">
+        <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i> {{ 'Common:Refresh' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Bộ lọc trạng thái (Tabs) -->
+  <div class="status-tabs">
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="selectedStatusFilter() === null"
+      (click)="filterByStatus(null)">
+      {{ 'Approvals:AllTickets' | abpLocalization }}
+    </button>
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="selectedStatusFilter() === 0"
+      (click)="filterByStatus(0)">
+      <span class="dot dot-pending"></span> {{ 'Approvals:PendingTab' | abpLocalization }}
+    </button>
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="selectedStatusFilter() === 1"
+      (click)="filterByStatus(1)">
+      <span class="dot dot-approved"></span> {{ 'Approvals:ApprovedTab' | abpLocalization }}
+    </button>
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="selectedStatusFilter() === 2"
+      (click)="filterByStatus(2)">
+      <span class="dot dot-rejected"></span> {{ 'Approvals:RejectedTab' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Danh sách phiếu phê duyệt -->
+  <div class="tickets-container">
+    <div *ngIf="tickets().length === 0 && !isLoading()" class="empty-tickets">
+      <i class="fa-solid fa-clipboard-check empty-icon"></i>
+      <p class="empty-title">{{ 'Approvals:EmptyTitle' | abpLocalization }}</p>
+      <p class="empty-desc">{{ 'Approvals:EmptyDesc' | abpLocalization }}</p>
+    </div>
+
+    <div *ngFor="let t of tickets()" class="ticket-card" [ngClass]="'status-' + t.statusName.toLowerCase()">
+      <div class="ticket-header">
+        <div class="ticket-type-box">
+          <span class="type-pill">{{ getTypeLabel(t.ticketType) }}</span>
+          <span *ngIf="t.roomNumber" class="room-pill">{{ 'Approvals:RoomPrefix' | abpLocalization: t.roomNumber }}</span>
+        </div>
+        <div class="ticket-status-box">
+          <span class="status-badge" [ngClass]="'badge-' + t.statusName.toLowerCase()">
+            {{ ('ApprovalTicketStatus:' + t.statusName) | abpLocalization }}
+          </span>
+        </div>
+      </div>
+
+      <div class="ticket-body">
+        <div class="reason-box">
+          <span class="reason-label">{{ 'Approvals:ReasonPrefix' | abpLocalization }}</span>
+          <p class="reason-text">"{{ t.reason }}"</p>
+        </div>
+
+        <div class="ticket-meta-grid">
+          <div class="meta-item">
+            <span class="meta-lbl">{{ 'Approvals:StaffRequested' | abpLocalization }}</span>
+            <span class="meta-val font-semibold">{{ t.requestedByStaffName }}</span>
+          </div>
+          <div class="meta-item" *ngIf="t.discountPercent">
+            <span class="meta-lbl">{{ 'Approvals:DiscountProposed' | abpLocalization }}</span>
+            <span class="meta-val text-primary font-bold">{{ t.discountPercent }}%</span>
+          </div>
+          <div class="meta-item" *ngIf="t.amount">
+            <span class="meta-lbl">{{ 'Approvals:AmountProposed' | abpLocalization }}</span>
+            <span class="meta-val text-success font-bold">{{ t.amount | number }} ₫</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-lbl">{{ 'Approvals:SentAt' | abpLocalization }}</span>
+            <span class="meta-val">{{ t.creationTime | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
+
+        <!-- Kết quả xem xét nếu đã duyệt hoặc từ chối -->
+        <div *ngIf="t.rejectionReason" class="rejection-box">
+          <span class="rejection-lbl"><i class="fa-solid fa-circle-xmark text-danger"></i> {{ 'Approvals:RejectReasonPrefix' | abpLocalization }}</span>
+          <p class="rejection-text">{{ t.rejectionReason }}</p>
+        </div>
+      </div>
+
+      <!-- Hành động Duyệt / Từ chối nếu đang ở Pending -->
+      <div *ngIf="t.status === 0" class="ticket-actions">
+        <button type="button" class="btn btn-approve" (click)="onApprove(t)">
+          <i class="fa-solid fa-check"></i> {{ 'Approvals:ApproveAction' | abpLocalization }}
+        </button>
+        <button type="button" class="btn btn-reject" (click)="openRejectModal(t)">
+          <i class="fa-solid fa-xmark"></i> {{ 'Approvals:RejectAction' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nhập lý do từ chối -->
+  <bh-modal 
+    [isOpen]="isRejectModalOpen()" 
+    [config]="{
+      titleKey: 'Approvals:RejectModalTitle',
+      confirmTextKey: 'Approvals:RejectModalConfirm',
+      cancelTextKey: 'Common:Cancel',
+      confirmVariant: 'danger'
+    }"
+    (confirm)="confirmReject()"
+    (cancel)="closeRejectModal()">
+    <div class="reject-modal-body">
+      <p class="reject-prompt">{{ 'Approvals:RejectPrompt' | abpLocalization }}</p>
+      <div class="form-group">
+        <label for="rejectReason" class="form-label">{{ 'Approvals:RejectionReason' | abpLocalization }} <span class="text-danger">*</span></label>
+        <textarea 
+          id="rejectReason" 
+          class="form-control" 
+          rows="4" 
+          [(ngModel)]="rejectReason"
+          [placeholder]="'Approvals:RejectPlaceholder' | abpLocalization">
+        </textarea>
+      </div>
+    </div>
+  </bh-modal>
+</div>

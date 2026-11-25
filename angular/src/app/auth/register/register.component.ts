@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, inject, ChangeDetectorRef } from '@an
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService, ConfigStateService, LocalizationPipe } from '@abp/ng.core';
+import { AuthService, ConfigStateService, LocalizationPipe, LocalizationService } from '@abp/ng.core';
 import { OAuthStorage } from 'angular-oauth2-oidc';
 import { environment } from '../../../environments/environment';
 import { AuthProxyService } from '../services/auth-proxy.service';
@@ -25,6 +25,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private oAuthStorage = inject(OAuthStorage);
   private configState = inject(ConfigStateService);
+  private localization = inject(LocalizationService);
   private cdr = inject(ChangeDetectorRef);
 
   currentStep = 1; // 1: Account, 2: Name, 3: Phone, 4: Done
@@ -33,6 +34,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   isLoading = false;
   isGoogleLoaded = false;
   isGoogleOnboarding = false;
+  isUserNameManuallyEdited = false;
   errorMessage = '';
 
   step1Form!: FormGroup;
@@ -60,7 +62,16 @@ export class RegisterComponent implements OnInit, AfterViewInit {
     }, { validators: this.passwordMatchValidator });
 
     this.step2Form = this.fb.group({
-      fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(128)]]
+      fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(128)]],
+      userName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(64), Validators.pattern(/^[a-zA-Z0-9._-]+$/)]]
+    });
+
+    // Tự động chuyển đổi Họ và tên thành Tên đăng nhập chuẩn không dấu thời gian thực
+    this.step2Form.get('fullName')?.valueChanges.subscribe((name: string) => {
+      if (!this.isUserNameManuallyEdited) {
+        const slug = this.generateUserNameSlug(name);
+        this.step2Form.patchValue({ userName: slug }, { emitEvent: false });
+      }
     });
 
     this.step3Form = this.fb.group({
@@ -77,7 +88,10 @@ export class RegisterComponent implements OnInit, AfterViewInit {
         this.registrationToken = params['token'];
         this.registeredEmail = params['email'] || '';
         if (params['name']) {
-          this.step2Form.patchValue({ fullName: params['name'] });
+          this.step2Form.patchValue({ 
+            fullName: params['name'],
+            userName: this.generateUserNameSlug(params['name'])
+          });
         }
         this.currentStep = 2; // Chuyển thẳng tới trang điền thông tin người dùng mới (Bước 2: Họ và Tên)
         this.cdr.detectChanges();
@@ -153,7 +167,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Không thể khởi tạo đăng ký. Vui lòng thử lại.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:InitRegistrationFailed');
         this.cdr.detectChanges();
       }
     });
@@ -180,17 +194,31 @@ export class RegisterComponent implements OnInit, AfterViewInit {
         this.registrationToken = res.registrationToken;
         this.registeredEmail = res.email;
         if (res.prefilledName) {
-          this.step2Form.patchValue({ fullName: res.prefilledName });
+          this.step2Form.patchValue({ 
+            fullName: res.prefilledName,
+            userName: this.generateUserNameSlug(res.prefilledName)
+          });
         }
         this.currentStep = 2; // Luôn chuyển tới Bước 2 để người dùng xác nhận Họ và Tên
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Đăng ký bằng Google không thành công.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:GoogleRegisterFailed');
         this.cdr.detectChanges();
       }
     });
+  }
+
+  generateUserNameSlug(fullName: string): string {
+    if (!fullName) return '';
+    return fullName
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toLowerCase();
   }
 
   onStep2Submit(): void {
@@ -202,7 +230,8 @@ export class RegisterComponent implements OnInit, AfterViewInit {
 
     this.authProxy.registerStep2({
       registrationToken: this.registrationToken,
-      fullName: this.step2Form.value.fullName
+      fullName: this.step2Form.value.fullName,
+      userName: this.step2Form.value.userName
     }).subscribe({
       next: () => {
         this.isLoading = false;
@@ -211,7 +240,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Cập nhật họ tên không thành công.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:UpdateFullNameFailed');
         this.cdr.detectChanges();
       }
     });
@@ -236,13 +265,13 @@ export class RegisterComponent implements OnInit, AfterViewInit {
           }
           this.currentStep = 4; // Hoàn tất
         } else {
-          this.errorMessage = res.message || 'Hoàn tất đăng ký không thành công.';
+          this.errorMessage = res.message || this.localization.instant('Auth:CompleteRegistrationFailed');
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Hoàn tất đăng ký không thành công.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:CompleteRegistrationFailed');
         this.cdr.detectChanges();
       }
     });

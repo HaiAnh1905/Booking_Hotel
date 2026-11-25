@@ -1,5 +1,36 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* =========================================================================
+   GLOBAL CSS RESET & FULL-BLEED VIEWPORT (LOẠI BỎ TOÀN BỘ KHOẢNG CÁCH RÌA)
+   ========================================================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #fafbfc !important;
+  overflow-x: clip;
+}
+
+body.bh-modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+app-root,
+abp-dynamic-layout,
+abp-layout-empty {
+  display: block;
+  width: 100% !important;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
 
 :root {
   --lpx-theme-light-bg: url('assets/images/login/login-bg-img-light.svg');
@@ -10,37 +41,196 @@
   --lpx-logo-url: var(--lpx-logo-icon);
   --lpx-logo: var(--lpx-logo-icon);
 
-  .abp-logo {
-    background-repeat: no-repeat;
+  /* =========================================================================
+     HIẾN PHÁP ĐIỀU KHOẢN VII & VIII: DESIGN TOKENS & SYSTEM PALETTE
+     ========================================================================= */
+
+  /* --- 1. Thương hiệu & Cổng Đặt Phòng Khách Hàng (Brand & Customer Portal) --- */
+  --bh-brand-red: #990000;
+  --bh-brand-red-hover: #7a0000;
+  --bh-brand-red-active: #5c0000;
+  --bh-brand-red-subtle: #fff0f0;
+  --bh-brand-red-border: #d99999;
+  --bh-brand-red-contrast: #ffffff; /* WCAG 2.1 AA: 7.60:1 */
+
+  --bh-brand-black: #000000;
+  --bh-brand-black-soft: #111111;
+  --bh-brand-black-muted: #333333;
+  --bh-brand-white: #ffffff;
+
+  /* --- 2. Phân Hệ Quản Trị & Vận Hành (Management / Admin Portal) --- */
+  --bh-mgmt-bg: #ffffff;
+  --bh-mgmt-surface: #f8f9fa;
+  --bh-mgmt-sidebar: #000000;
+  --bh-mgmt-sidebar-hover: #1a1a1a;
+  --bh-mgmt-sidebar-active: #262626;
+  --bh-mgmt-sidebar-text: #cccccc;
+  --bh-mgmt-sidebar-text-active: #ffffff;
+  --bh-mgmt-sidebar-border: #222222;
+
+  --bh-mgmt-accent: #00ffff;
+  --bh-mgmt-accent-hover: #00d6d6;
+  --bh-mgmt-accent-active: #00b3b3;
+  --bh-mgmt-accent-contrast: #000000; /* WCAG 2.1 AA: 16.70:1 - BẮT BUỘC CHỮ ĐEN */
+  --bh-mgmt-border: #e9ecef;
+  --bh-mgmt-card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --bh-mgmt-card-shadow-hover: 0 0.5rem 1rem rgba(0, 0, 0, 0.12);
+
+  /* --- 3. Phân Hệ Lễ Tân & Buồng Phòng (Front Desk & Room Rack Portal) --- */
+  --bh-frontdesk-primary: #99ff99;
+  --bh-frontdesk-primary-hover: #80e680;
+  --bh-frontdesk-primary-contrast: #000000; /* WCAG 2.1 AA: 15.40:1 - BẮT BUỘC CHỮ ĐEN */
+
+  --bh-frontdesk-secondary: #808080;
+  --bh-frontdesk-secondary-hover: #6c757d;
+  --bh-frontdesk-secondary-contrast: #ffffff; /* WCAG 2.1 AA: 3.95:1 (UI Badge / Large Text) */
+
+  /* --- 4. Huy Hiệu Trạng Thái Buồng Phòng (Room Rack Status Badges) --- */
+  --bh-status-available-bg: #99ff99;
+  --bh-status-available-text: #000000;
+
+  --bh-status-dirty-bg: #808080;
+  --bh-status-dirty-text: #ffffff;
+
+  --bh-status-occupied-bg: #990000;
+  --bh-status-occupied-text: #ffffff;
+
+  --bh-status-maintenance-bg: #ffa500;
+  --bh-status-maintenance-text: #000000;
+
+  /* --- 5. Kiểu Chữ & Phông Hệ Thống (Typography) --- */
+  --bh-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bh-font-mono: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* --- 6. Kích Thước Bố Cục & Đường Bo (Layout Dimensions & Radii) --- */
+  --bh-header-height: 70px;
+  --bh-sidebar-width: 260px;
+  --bh-sidebar-collapsed-width: 72px;
+  --bh-content-max-width: 1400px;
+  --bh-radius-sm: 4px;
+  --bh-radius-md: 8px;
+  --bh-radius-lg: 12px;
+  --bh-radius-full: 9999px;
+  --bh-transition-speed: 0.25s ease-in-out;
+}
+
+/* =========================================================================
+   HIẾN PHÁP ĐIỀU KHOẢN VIII: BRAND LOGO TYPOGRAPHY STANDARD
+   ========================================================================= */
+.bh-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--bh-font-sans);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  user-select: none;
+  cursor: pointer;
+
+  .logo-red {
+    color: var(--bh-brand-red);
+    margin-right: 0.35rem; /* Bắt buộc khoảng cách rõ ràng, tuyệt đối không dính chữ */
+    transition: color var(--bh-transition-speed);
   }
 
-  .abp-support {
-    width: 178px;
-    height: 30px;
-    background-image: url('assets/images/getting-started/abp-support.svg');
+  .logo-black {
+    color: var(--bh-brand-black-soft);
+    transition: color var(--bh-transition-speed);
   }
 
-  .abp-community {
-    width: 215px;
-    height: 30px;
-    background-image: url('assets/images/getting-started/abp-community.svg');
+  &:hover {
+    .logo-red {
+      color: var(--bh-brand-red-hover);
+    }
   }
 
-  .abp-blog {
-    width: 142px;
-    height: 30px;
-    background-image: url('assets/images/getting-started/abp-blog.svg');
-  }
-
-  .logo-x {
-    width: 20px;
-    height: 20px;
-    background-image: url('assets/images/getting-started/x.svg');
+  /* Khi hiển thị trên nền tối hoặc Sidebar Đen */
+  &.on-dark {
+    .logo-black {
+      color: var(--bh-brand-white);
+    }
   }
 }
 
 /* =========================================================================
-   LOẠI BỎ HOÀN TOÀN SIDEBAR LEPTONX KHỎI TOÀN BỘ HỆ THỐNG (Theo RM-003 & Hiến pháp)
+   NÚT TÁC VỤ DÙNG CHUNG (GLOBAL BUTTON UTILITIES THEO CONCEPT)
+   ========================================================================= */
+.btn-bh-primary {
+  background-color: var(--bh-brand-red) !important;
+  border-color: var(--bh-brand-red) !important;
+  color: var(--bh-brand-white) !important;
+  font-weight: 600;
+  border-radius: var(--bh-radius-md);
+  padding: 0.5rem 1.25rem;
+  transition: all var(--bh-transition-speed);
+
+  &:hover, &:focus {
+    background-color: var(--bh-brand-red-hover) !important;
+    border-color: var(--bh-brand-red-hover) !important;
+    color: var(--bh-brand-white) !important;
+    box-shadow: 0 4px 12px rgba(153, 0, 0, 0.25);
+  }
+
+  &:active {
+    background-color: var(--bh-brand-red-active) !important;
+    border-color: var(--bh-brand-red-active) !important;
+  }
+}
+
+.btn-bh-outline-primary {
+  background-color: transparent !important;
+  border-color: var(--bh-brand-red) !important;
+  color: var(--bh-brand-red) !important;
+  font-weight: 600;
+  border-radius: var(--bh-radius-md);
+  padding: 0.5rem 1.25rem;
+  transition: all var(--bh-transition-speed);
+
+  &:hover, &:focus {
+    background-color: var(--bh-brand-red) !important;
+    color: var(--bh-brand-white) !important;
+    box-shadow: 0 4px 12px rgba(153, 0, 0, 0.15);
+  }
+}
+
+.btn-bh-accent {
+  background-color: var(--bh-mgmt-accent) !important;
+  border-color: var(--bh-mgmt-accent) !important;
+  color: var(--bh-mgmt-accent-contrast) !important;
+  font-weight: 700;
+  border-radius: var(--bh-radius-md);
+  padding: 0.5rem 1.25rem;
+  transition: all var(--bh-transition-speed);
+
+  &:hover, &:focus {
+    background-color: var(--bh-mgmt-accent-hover) !important;
+    border-color: var(--bh-mgmt-accent-hover) !important;
+    color: var(--bh-mgmt-accent-contrast) !important;
+    box-shadow: 0 4px 12px rgba(0, 255, 255, 0.35);
+  }
+}
+
+.btn-bh-frontdesk {
+  background-color: var(--bh-frontdesk-primary) !important;
+  border-color: var(--bh-frontdesk-primary) !important;
+  color: var(--bh-frontdesk-primary-contrast) !important;
+  font-weight: 700;
+  border-radius: var(--bh-radius-md);
+  padding: 0.5rem 1.25rem;
+  transition: all var(--bh-transition-speed);
+
+  &:hover, &:focus {
+    background-color: var(--bh-frontdesk-primary-hover) !important;
+    border-color: var(--bh-frontdesk-primary-hover) !important;
+    color: var(--bh-frontdesk-primary-contrast) !important;
+    box-shadow: 0 4px 12px rgba(153, 255, 153, 0.35);
+  }
+}
+
+/* =========================================================================
+   VÔ HIỆU HÓA HOÀN TOÀN KHUNG MẶC ĐỊNH CỦA LEPTONX KHI DÙNG CUSTOM SHELLS
    ========================================================================= */
 .lpx-sidebar-container,
 .lpx-sidebar,
@@ -51,24 +241,180 @@
 }
 
 #lpx-wrapper,
-#lpx-wrapper.hover-trigger {
-  padding-left: 0 !important;
-  margin-left: 0 !important;
+#lpx-wrapper.hover-trigger,
+#lpx-wrapper.full,
+#lpx-wrapper.fixed {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 
-  .lpx-content-container {
-    margin-left: 0 !important;
+  .lpx-content-container,
+  .lpx-content-wrapper,
+  .lpx-content {
+    margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding-left: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
   }
 
   .lpx-footbar-container {
-    left: 0 !important;
-    width: 100% !important;
+    display: none !important;
   }
 
   .lpx-topbar-container {
-    left: 0 !important;
-    width: 100% !important;
+    display: none !important;
   }
 }
+
+/* =========================================================================
+   QUY CHUẨN ĐỘ TƯƠNG PHẢN CAO CHO BẢNG DỮ LIỆU & BIỂU MẪU (WCAG 2.1 AA)
+   ========================================================================= */
+.table {
+  color: #1e293b;
+
+  thead th {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    background-color: #f1f5f9 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+
+  tbody td {
+    color: #1e293b !important;
+  }
+
+  td.text-end,
+  th.text-end,
+  .col-actions,
+  .action-col {
+    white-space: nowrap !important;
+  }
+}
+
+.action-buttons-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* =========================================================================
+   QUY CHUẨN MÀU NỀN & TRƯỜNG NHẬP LIỆU (ZERO MUDDY-GRAY STANDARD)
+   Loại bỏ hoàn toàn màu xám tối bẩn (#b0b0b0 / #adb5bd) của theme LeptonX
+   ========================================================================= */
+.bg-light {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 500;
+  opacity: 1 !important;
+  cursor: not-allowed;
+
+  &::placeholder {
+    color: #94a3b8 !important;
+  }
+}
+
+.form-control,
+.form-select {
+  border-color: #cbd5e1;
+  color: #0f172a;
+
+  &:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  }
+}
+
+/* =========================================================================
+   QUY CHUẨN CHECKBOX & RADIO RÕ NÉT (HIGH VISIBILITY CHECKBOX STANDARD)
+   ========================================================================= */
+.form-check-input {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid #64748b !important;
+  background-color: #ffffff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease-in-out;
+
+  &:hover {
+    border-color: #334155 !important;
+  }
+
+  &:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+  }
+
+  &:checked {
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+  }
+}
+
+/* =========================================================================
+   HIẾN PHÁP ĐIỀU KHOẢN XI: QUY CHUẨN ĐÁNH DẤU TRƯỜNG BẮT BUỘC (REQUIRED FIELD STANDARD)
+   Chỉ hiển thị dấu * màu đỏ (#dc2626) ở cuối nhãn.
+   Tuyệt đối KHÔNG đổi màu chữ của toàn bộ nhãn và KHÔNG in đậm.
+   ========================================================================= */
+
+/* Bảo toàn màu chữ tự nhiên và font-weight thường cho nhãn label */
+label,
+.form-label,
+.field-label,
+label.required,
+.form-label.required,
+.field-label.required,
+.form-group.required > label {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Chỉ riêng dấu sao mới có màu đỏ và tuyệt đối KHÔNG in đậm */
+span.required,
+span.required-star,
+span.required-asterisk,
+.text-danger.required-marker,
+label > .text-danger,
+.form-label > .text-danger,
+.field-label > .text-danger,
+.label-with-link > label > .text-danger {
+  color: #dc2626 !important;
+  font-weight: 400 !important;
+  margin-left: 3px;
+  display: inline-block;
+}
+
+/* Fallback bằng CSS ::after khi label có class .required mà không có thẻ span con */
+label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.form-label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.field-label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.form-group.required > label:not(:has(.text-danger)):not(:has(.required))::after {
+  content: " *";
+  color: #dc2626 !important;
+  font-weight: 400 !important;
+}
+
+

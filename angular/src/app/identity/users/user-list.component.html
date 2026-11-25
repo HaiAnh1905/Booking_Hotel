@@ -1,0 +1,250 @@
+<div class="user-management-page">
+  <!-- Header & Toolbar -->
+  <div class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h1 class="page-title">{{ 'Identity:Title' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Identity:Subtitle' | abpLocalization }}</p>
+    </div>
+
+    <div class="header-actions" *ngIf="!isHotelManager">
+      <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+        <i class="fa-solid fa-user-plus me-2"></i>
+        <span>{{ 'Identity:CreateUser' | abpLocalization }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filter-card mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-5">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="filterText"
+            (keyup.enter)="onSearch()"
+            [placeholder]="'Identity:FilterSearchPlaceholder' | abpLocalization"
+          />
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="selectedRole" (change)="onSearch()">
+          <option value="">{{ 'Identity:AllRoles' | abpLocalization }}</option>
+          <option *ngFor="let r of availableRoles" [value]="r">
+            {{ ('Role:' + r) | abpLocalization }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="selectedStatus" (change)="onSearch()">
+          <option value="">{{ 'Identity:AllStatuses' | abpLocalization }}</option>
+          <option value="active">{{ 'Identity:StatusActive' | abpLocalization }}</option>
+          <option value="locked">{{ 'Identity:StatusLocked' | abpLocalization }}</option>
+          <option value="inactive">{{ 'Identity:StatusInactive' | abpLocalization }}</option>
+        </select>
+      </div>
+
+      <div class="col-md-1 text-end">
+        <button type="button" class="btn btn-secondary w-100" (click)="onSearch()" [title]="'Common:Search' | abpLocalization">
+          <i class="fa-solid fa-filter"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <bh-data-table
+      [columns]="columns"
+      [items]="users"
+      [loading]="isLoading"
+      [pagination]="pagination"
+      (pageChange)="onPageChange($event)"
+    >
+      <ng-template #cellTemplate let-item let-column="column">
+        <!-- Username -->
+        <ng-container *ngIf="column.field === 'userName'">
+          <div class="d-flex align-items-center gap-2">
+            <div class="user-avatar">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div>
+              <span class="user-name-text">{{ item.userName }}</span>
+              <small class="d-block text-muted" *ngIf="item.shouldChangePasswordOnNextLogin">
+                <i class="fa-solid fa-key text-warning me-1"></i>{{ 'Identity:NeedPasswordChange' | abpLocalization }}
+              </small>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Full Name -->
+        <ng-container *ngIf="column.field === 'name'">
+          <span>{{ (item.surname ? item.surname + ' ' : '') + (item.name || '---') }}</span>
+        </ng-container>
+
+        <!-- Email -->
+        <ng-container *ngIf="column.field === 'email'">
+          <div class="email-text">
+            <span>{{ item.email }}</span>
+            <small class="d-block text-muted" *ngIf="item.phoneNumber">
+              <i class="fa-solid fa-phone me-1"></i>{{ item.phoneNumber }}
+            </small>
+          </div>
+        </ng-container>
+
+        <!-- Roles -->
+        <ng-container *ngIf="column.field === 'roles'">
+          <div class="d-flex flex-wrap gap-1">
+            <span *ngFor="let r of item.roleNames" class="badge bg-role">
+              {{ ('Role:' + r) | abpLocalization }}
+            </span>
+          </div>
+        </ng-container>
+
+        <!-- Assigned Hotels -->
+        <ng-container *ngIf="column.field === 'assignedHotels'">
+          <div *ngIf="item.assignedHotels && item.assignedHotels.length > 0" class="d-flex flex-wrap gap-1">
+            <span
+              *ngFor="let h of item.assignedHotels"
+              class="badge"
+              [ngClass]="(h.isPrimary && item.roleNames?.includes('Receptionist')) ? 'bg-primary-branch' : 'bg-secondary-branch'"
+              [title]="h.hotelName"
+            >
+              <i *ngIf="h.isPrimary && item.roleNames?.includes('Receptionist')" class="fa-solid fa-star me-1 text-warning"></i>
+              {{ h.hotelCode }}
+            </span>
+          </div>
+          <span *ngIf="!item.assignedHotels || item.assignedHotels.length === 0" class="text-muted small">
+            ---
+          </span>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container *ngIf="column.field === 'status'">
+          <span *ngIf="item.isLockedOut" class="badge bg-danger-soft">
+            <i class="fa-solid fa-lock me-1"></i>{{ 'Identity:Locked' | abpLocalization }}
+          </span>
+          <span *ngIf="!item.isLockedOut && item.isActive" class="badge bg-success-soft">
+            <i class="fa-solid fa-circle-check me-1"></i>{{ 'Identity:Active' | abpLocalization }}
+          </span>
+          <span *ngIf="!item.isLockedOut && !item.isActive" class="badge bg-secondary-soft">
+            <i class="fa-solid fa-ban me-1"></i>{{ 'Identity:Inactive' | abpLocalization }}
+          </span>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container *ngIf="column.field === 'actions'">
+          <div class="action-buttons d-inline-flex gap-1" *ngIf="!isHotelManager">
+            <!-- Sửa (Luôn hiển thị cho cả tài khoản admin và các tài khoản khác) -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-cyan"
+              (click)="openEditModal(item)"
+              [title]="'Identity:EditUserTooltip' | abpLocalization"
+            >
+              <i class="fa-solid fa-pen"></i>
+            </button>
+
+            <!-- Đối với tài khoản admin: Ẩn các nút thao tác khác (Mở khóa, Tạm ngừng, Xóa) -->
+            <ng-container *ngIf="!isAdminUser(item)">
+              <!-- Mở khóa tài khoản (nếu bị khóa) -->
+              <button
+                *ngIf="item.isLockedOut"
+                type="button"
+                class="btn btn-sm btn-warning"
+                (click)="openUnlockModal(item)"
+                [title]="'Identity:UnlockTooltip' | abpLocalization"
+              >
+                <i class="fa-solid fa-key me-1"></i>
+                <span>{{ 'Identity:UnlockAction' | abpLocalization }}</span>
+              </button>
+
+              <!-- Bật/Tắt trạng thái (Tạm ngừng / Kích hoạt) -->
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="toggleUserStatus(item)"
+                [title]="item.isActive ? ('Identity:SuspendTooltip' | abpLocalization) : ('Identity:ActivateTooltip' | abpLocalization)"
+              >
+                <i class="fa-solid" [ngClass]="item.isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'"></i>
+              </button>
+
+              <!-- Xóa -->
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="openDeleteModal(item)"
+                [title]="'Identity:DeleteUserTooltip' | abpLocalization"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </ng-container>
+          </div>
+
+          <!-- Hotel Manager view mode: chỉ đọc -->
+          <span *ngIf="isHotelManager" class="badge bg-secondary-soft">
+            <i class="fa-solid fa-eye me-1"></i>{{ 'Common:ReadOnly' | abpLocalization }}
+          </span>
+        </ng-container>
+      </ng-template>
+    </bh-data-table>
+  </div>
+
+  <!-- Create/Edit User Modal -->
+  <bh-user-modal
+    [isOpen]="isUserModalOpen"
+    [user]="selectedUser"
+    [availableRoles]="availableRoles"
+    [availableHotels]="availableHotels"
+    [busy]="isSavingUser"
+    (cancel)="onUserModalCancel()"
+    (save)="onUserModalSave($event)"
+  ></bh-user-modal>
+
+  <!-- Unlock Confirmation Modal -->
+  <bh-modal
+    [isOpen]="isUnlockModalOpen"
+    [config]="unlockModalConfig"
+    [busy]="isUnlocking"
+    (cancel)="cancelUnlock()"
+    (confirm)="confirmUnlock()"
+  >
+    <div *ngIf="unlockTargetUser" class="unlock-dialog-content">
+      <p class="mb-3">
+        {{ 'Identity:UnlockConfirmQuestion' | abpLocalization: unlockTargetUser.userName }}
+      </p>
+
+      <div class="mb-3">
+        <label for="unlockReasonInput" class="form-label small text-muted">
+          {{ 'Identity:UnlockReason' | abpLocalization }}
+        </label>
+        <textarea
+          id="unlockReasonInput"
+          class="form-control"
+          rows="2"
+          [(ngModel)]="unlockReason"
+          [placeholder]="'Identity:UnlockReasonPlaceholder' | abpLocalization"
+        ></textarea>
+      </div>
+    </div>
+  </bh-modal>
+
+  <!-- Delete Confirmation Modal -->
+  <bh-modal
+    [isOpen]="isDeleteModalOpen"
+    [config]="deleteModalConfig"
+    [busy]="isDeleting"
+    (cancel)="cancelDelete()"
+    (confirm)="confirmDelete()"
+  >
+    <div *ngIf="deleteTargetUser" class="delete-dialog-content">
+      <p class="mb-0">
+        {{ 'Identity:DeleteUserConfirm' | abpLocalization: deleteTargetUser.userName }}
+      </p>
+    </div>
+  </bh-modal>
+</div>

@@ -40,6 +40,7 @@ export interface RegisterStep1ResultDto {
 export interface RegisterStep2InputDto {
   registrationToken: string;
   fullName: string;
+  userName?: string;
 }
 
 export interface RegisterStep3InputDto {
@@ -66,6 +67,12 @@ export interface ResetPasswordInputDto {
 export interface ResetPasswordInfoDto {
   email: string;
   maskedEmail: string;
+}
+
+export interface ChangePasswordInputDto {
+  currentPassword?: string;
+  newPassword?: string;
+  confirmNewPassword?: string;
 }
 
 @Injectable({
@@ -150,6 +157,14 @@ export class AuthProxyService {
     return this.restService.request<null, void>({
       method: 'POST',
       url: `/api/app/auth/unlock-user/${userId}`,
+    }, { apiName: this.apiName, skipHandleError: true });
+  }
+
+  changePassword(input: ChangePasswordInputDto): Observable<LoginResultDto> {
+    return this.restService.request<ChangePasswordInputDto, LoginResultDto>({
+      method: 'POST',
+      url: '/api/app/auth/change-password',
+      body: input,
     }, { apiName: this.apiName, skipHandleError: true });
   }
 }

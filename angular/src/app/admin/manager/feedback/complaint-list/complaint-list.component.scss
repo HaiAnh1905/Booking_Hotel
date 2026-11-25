@@ -1,0 +1,44 @@
+.complaints-page-container {
+  padding: 1.5rem;
+
+  .complaint-card {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    &.border-danger {
+      border-left: 4px solid #dc3545 !important;
+    }
+  }
+
+  .pulse-badge {
+    animation: pulse-red 2s infinite;
+  }
+
+  @keyframes pulse-red {
+    0% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+  }
+
+  .complaint-desc {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    border-left: 3px solid #cbd5e1;
+  }
+
+  .resolution-box {
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a !important;
+  }
+}

@@ -81,6 +81,14 @@ public static class BookingHotelModuleExtensionConfigurator
                             property.Attributes.Add(new StringLengthAttribute(128));
                         }
                     );
+
+                    user.AddOrUpdateProperty<bool>(
+                        Identity.BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty,
+                        property =>
+                        {
+                            property.DefaultValue = false;
+                        }
+                    );
                 });
             });
     }

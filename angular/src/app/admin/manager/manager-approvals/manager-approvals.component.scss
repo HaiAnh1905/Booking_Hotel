@@ -1,0 +1,313 @@
+.manager-approvals-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .property-tag-row {
+      margin-bottom: 6px;
+
+      .active-badge {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #0284c7;
+        background-color: #e0f2fe;
+        padding: 3px 8px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 4px 0 0 0;
+    }
+
+    .header-actions {
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        transition: all 0.2s ease;
+
+        &:hover { background: #f8fafc; border-color: #94a3b8; }
+      }
+    }
+  }
+
+  .status-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+    overflow-x: auto;
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        &.dot-pending { background-color: #f59e0b; }
+        &.dot-approved { background-color: #16a34a; }
+        &.dot-rejected { background-color: #ef4444; }
+      }
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+      }
+
+      &.active {
+        background-color: #0f172a;
+        color: #ffffff;
+      }
+    }
+  }
+
+  .tickets-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .empty-tickets {
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 48px;
+      text-align: center;
+      color: #64748b;
+
+      .empty-icon {
+        font-size: 3rem;
+        color: #94a3b8;
+        margin-bottom: 12px;
+      }
+
+      .empty-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+      }
+
+      .empty-desc {
+        font-size: 0.875rem;
+        margin: 6px 0 0 0;
+      }
+    }
+
+    .ticket-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: border-color 0.2s;
+
+      &.status-pending { border-left: 4px solid #f59e0b; }
+      &.status-approved { border-left: 4px solid #16a34a; }
+      &.status-rejected { border-left: 4px solid #ef4444; }
+
+      .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .ticket-type-box {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          .type-pill {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0369a1;
+            background-color: #e0f2fe;
+            padding: 4px 10px;
+            border-radius: 6px;
+          }
+
+          .room-pill {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+          }
+        }
+
+        .status-badge {
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 4px 10px;
+          border-radius: 9999px;
+
+          &.badge-pending { background-color: #fef3c7; color: #b45309; }
+          &.badge-approved { background-color: #dcfce7; color: #15803d; }
+          &.badge-rejected { background-color: #fee2e2; color: #b91c1c; }
+        }
+      }
+
+      .ticket-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .reason-box {
+          background-color: #f8fafc;
+          border-radius: 8px;
+          padding: 12px;
+
+          .reason-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+          }
+
+          .reason-text {
+            margin: 4px 0 0 0;
+            font-size: 0.9rem;
+            color: #0f172a;
+            font-style: italic;
+          }
+        }
+
+        .ticket-meta-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 12px;
+          font-size: 0.825rem;
+
+          .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            .meta-lbl { color: #64748b; font-size: 0.75rem; }
+            .meta-val { color: #1e293b; }
+          }
+        }
+
+        .rejection-box {
+          background-color: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 8px;
+          padding: 10px 14px;
+
+          .rejection-lbl { font-size: 0.8rem; font-weight: 700; color: #991b1b; }
+          .rejection-text { margin: 4px 0 0 0; font-size: 0.85rem; color: #7f1d1d; }
+        }
+      }
+
+      .ticket-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 18px;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &.btn-approve {
+            background-color: #16a34a;
+            color: #ffffff;
+            border: 1px solid #15803d;
+            &:hover { background-color: #15803d; }
+          }
+
+          &.btn-reject {
+            background-color: #ffffff;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+            &:hover { background-color: #fee2e2; }
+          }
+        }
+      }
+    }
+  }
+
+  .reject-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    .reject-prompt {
+      font-size: 0.875rem;
+      color: #475569;
+      margin: 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      .form-control {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.875rem;
+        resize: vertical;
+        &:focus { outline: none; border-color: #ef4444; }
+      }
+    }
+  }
+}
+

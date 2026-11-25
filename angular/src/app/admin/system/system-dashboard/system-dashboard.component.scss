@@ -1,0 +1,240 @@
+.system-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 4px 0 0 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+
+        &.btn-primary {
+          background-color: #7c3aed;
+          color: #ffffff;
+          border: 1px solid #7c3aed;
+          &:hover { background-color: #6d28d9; }
+        }
+
+        &.btn-outline {
+          background-color: #ffffff;
+          color: #0f172a;
+          border: 1px solid #cbd5e1;
+          &:hover { background-color: #f8fafc; border-color: #94a3b8; }
+        }
+      }
+    }
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+
+    .metric-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+      .metric-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+      }
+
+      .metric-body {
+        display: flex;
+        flex-direction: column;
+
+        .metric-title {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .metric-value {
+          font-size: 1.6rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 4px 0;
+        }
+
+        .metric-trend {
+          font-size: 0.75rem;
+          font-weight: 500;
+
+          &.positive { color: #16a34a; }
+          &.neutral { color: #64748b; }
+        }
+      }
+    }
+  }
+
+  .content-split {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 24px;
+
+    @media (max-width: 992px) {
+      grid-template-columns: 1fr;
+    }
+
+    .dashboard-panel {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+      .panel-header {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 14px;
+        margin-bottom: 16px;
+
+        .panel-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #0f172a;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+      }
+
+      .activity-timeline {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .timeline-item {
+          display: flex;
+          gap: 12px;
+          position: relative;
+
+          .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+          }
+
+          &.info .timeline-dot { background-color: #0284c7; }
+          &.success .timeline-dot { background-color: #16a34a; }
+          &.warning .timeline-dot { background-color: #eab308; }
+          &.danger .timeline-dot { background-color: #ef4444; }
+
+          .timeline-content {
+            flex: 1;
+
+            .timeline-title-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 0.85rem;
+              font-weight: 600;
+              color: #1e293b;
+
+              .timeline-time {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                font-weight: 400;
+              }
+            }
+
+            .timeline-desc {
+              margin: 4px 0 0 0;
+              font-size: 0.8rem;
+              color: #64748b;
+              line-height: 1.4;
+            }
+          }
+        }
+      }
+
+      .health-item {
+        margin-bottom: 16px;
+
+        &:last-child { margin-bottom: 0; }
+
+        .health-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.825rem;
+          font-weight: 500;
+          color: #334155;
+          margin-bottom: 6px;
+
+          .status-pill {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 9999px;
+
+            &.status-healthy {
+              background-color: #dcfce7;
+              color: #15803d;
+            }
+          }
+        }
+
+        .progress-bar-bg {
+          height: 6px;
+          background-color: #f1f5f9;
+          border-radius: 3px;
+          overflow: hidden;
+
+          .progress-bar-fill {
+            height: 100%;
+            background-color: #22c55e;
+            border-radius: 3px;
+          }
+        }
+      }
+    }
+  }
+}
+

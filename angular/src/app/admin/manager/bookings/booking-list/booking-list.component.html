@@ -1,0 +1,197 @@
+<div class="booking-management-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Menu:ManagerBookings' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Manager:Booking:Subtitle' | abpLocalization }}</p>
+    </div>
+
+    <button type="button" class="btn btn-primary fw-bold" (click)="openDirectModal()">
+      <i class="fa-solid fa-plus-circle me-1"></i> {{ 'Manager:Booking:CreateDirectBooking' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="toolbar-card">
+    <div class="filter-inputs-row">
+      <!-- Search text -->
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          [placeholder]="'Manager:Booking:SearchPlaceholder' | abpLocalization"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event); onFilterChange()" />
+      </div>
+
+      <!-- Lọc BookingStatus -->
+      <div class="filter-select-item">
+        <select
+          class="form-select form-select-sm"
+          [ngModel]="selectedBookingStatus()"
+          (ngModelChange)="selectedBookingStatus.set($event); onFilterChange()">
+          <option [ngValue]="null">{{ 'Manager:Booking:AllBookingStatuses' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.PendingConfirmation">{{ 'Manager:Booking:Status_Pending' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.Confirmed">{{ 'Manager:Booking:Status_Confirmed' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.CheckedIn">{{ 'Manager:Booking:Status_CheckedIn' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.Completed">{{ 'Manager:Booking:Status_Completed' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.NoShow">{{ 'Manager:Booking:Status_NoShow' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.Cancelled">{{ 'Manager:Booking:Status_Cancelled' | abpLocalization }}</option>
+          <option [ngValue]="BookingStatus.Rejected">{{ 'Manager:Booking:Status_Rejected' | abpLocalization }}</option>
+        </select>
+      </div>
+
+      <!-- Lọc PaymentStatus -->
+      <div class="filter-select-item">
+        <select
+          class="form-select form-select-sm"
+          [ngModel]="selectedPaymentStatus()"
+          (ngModelChange)="selectedPaymentStatus.set($event); onFilterChange()">
+          <option [ngValue]="null">{{ 'Manager:Booking:AllPaymentStatuses' | abpLocalization }}</option>
+          <option [ngValue]="PaymentStatus.Paid">{{ 'Manager:Booking:PaymentStatus_Paid' | abpLocalization }}</option>
+          <option [ngValue]="PaymentStatus.PartiallyPaid">{{ 'Manager:Booking:PaymentStatus_PartiallyPaid' | abpLocalization }}</option>
+          <option [ngValue]="PaymentStatus.Unpaid">{{ 'Manager:Booking:PaymentStatus_Unpaid' | abpLocalization }}</option>
+          <option [ngValue]="PaymentStatus.Refunded">{{ 'Manager:Booking:PaymentStatus_Refunded' | abpLocalization }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="total-count-meta text-muted small">
+      {{ 'Common:Total' | abpLocalization }}: <strong>{{ totalCount() }}</strong> đơn đặt phòng
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <!-- Bookings Data Table -->
+  <div class="table-responsive bg-white rounded-3 border" *ngIf="!isLoading()">
+    <table class="table modern-table mb-0">
+      <thead>
+        <tr>
+          <th>{{ 'Manager:Booking:Code' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:Name' | abpLocalization }}</th>
+          <th>{{ 'Manager:Room:Type' | abpLocalization }}</th>
+          <th>{{ 'Manager:Booking:StayDates' | abpLocalization }}</th>
+          <th>{{ 'Manager:Booking:TotalAmount' | abpLocalization }}</th>
+          <th>{{ 'Manager:Booking:Status' | abpLocalization }}</th>
+          <th>{{ 'Manager:Booking:PaymentStatus' | abpLocalization }}</th>
+          <th>{{ 'Manager:Booking:RoomAssignment' | abpLocalization }}</th>
+          <th class="text-end">{{ 'Common:Actions' | abpLocalization }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of bookings()">
+          <td>
+            <span class="booking-code fw-bold text-primary">{{ b.bookingCode }}</span>
+            <span *ngIf="b.isDirectBooking" class="badge-direct ms-1">{{ 'Manager:Bookings:DirectBadge' | abpLocalization }}</span>
+          </td>
+          <td>
+            <div class="guest-info">
+              <span class="guest-name fw-bold">{{ b.guestFullName }}</span>
+              <span class="guest-phone text-muted small">{{ b.guestPhone }}</span>
+            </div>
+          </td>
+          <td>{{ b.roomTypeName }}</td>
+          <td>
+            <div class="stay-dates small">
+              <span>{{ b.checkInDate | date:'dd/MM' }}</span> → <span>{{ b.checkOutDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="amount-col">
+              <span class="fw-bold">{{ b.totalAmount | number:'1.0-0' }} VNĐ</span>
+              <span class="text-muted small d-block">Cọc: {{ b.depositAmount | number:'1.0-0' }} VNĐ</span>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getBookingBadgeClass(b.bookingStatus)">
+              {{ getBookingStatusKey(b.bookingStatus) | abpLocalization }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getPaymentBadgeClass(b.paymentStatus)">
+              {{ getPaymentStatusKey(b.paymentStatus) | abpLocalization }}
+            </span>
+          </td>
+          <td>
+            <span *ngIf="b.assignedRoomNumber" class="badge-room assigned">
+              <i class="fa-solid fa-door-closed"></i> {{ b.assignedRoomNumber }}
+            </span>
+            <span *ngIf="!b.assignedRoomNumber" class="badge-room unassigned text-warning">
+              <i class="fa-solid fa-circle-question"></i> {{ 'Manager:Booking:RoomAssignment_Unassigned' | abpLocalization }}
+            </span>
+          </td>
+          <td class="text-end">
+            <!-- Xem chi tiết -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary me-1"
+              [title]="'Common:View' | abpLocalization"
+              (click)="openDetailModal(b)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <!-- Duyệt nhanh nếu Pending -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-success me-1"
+              *ngIf="b.bookingStatus === BookingStatus.PendingConfirmation"
+              [title]="'Manager:Booking:Confirm' | abpLocalization"
+              (click)="quickConfirm(b)">
+              <i class="fa-solid fa-check"></i>
+            </button>
+            <!-- No-Show nếu Confirmed -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning"
+              *ngIf="b.bookingStatus === BookingStatus.Confirmed"
+              [title]="'Manager:Booking:MarkNoShow' | abpLocalization"
+              (click)="openNoShowModal(b)">
+              <i class="fa-solid fa-user-xmark"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="bookings().length === 0">
+          <td colspan="9" class="text-center py-5 text-muted">
+            <i class="fa-solid fa-calendar-xmark fa-3x mb-2 d-block"></i>
+            {{ 'Common:NoData' | abpLocalization }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modals -->
+  <bh-booking-detail-modal
+    [isOpen]="isDetailModalOpen()"
+    [booking]="selectedBookingForDetail()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    (closed)="isDetailModalOpen.set(false)"
+    (statusUpdated)="onBookingUpdated($event)"
+    (noShowTriggered)="openNoShowModal($event)">
+  </bh-booking-detail-modal>
+
+  <bh-direct-booking-modal
+    [isOpen]="isDirectModalOpen()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    [roomTypes]="roomTypes()"
+    (closed)="isDirectModalOpen.set(false)"
+    (created)="onDirectBookingCreated($event)">
+  </bh-direct-booking-modal>
+
+  <bh-no-show-modal
+    [isOpen]="isNoShowModalOpen()"
+    [booking]="selectedBookingForNoShow()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    (closed)="isNoShowModalOpen.set(false)"
+    (processed)="onNoShowProcessed($event)">
+  </bh-no-show-modal>
+</div>

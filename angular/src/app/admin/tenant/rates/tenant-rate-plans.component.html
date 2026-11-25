@@ -1,0 +1,271 @@
+<div class="tenant-rate-plans-page">
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="page-title">{{ 'Tenant:RatePlans:Title' | abpLocalization }}</h1>
+      <p class="page-subtitle text-muted mb-0">{{ 'Tenant:RatePlans:Subtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus"></i>
+      <span>{{ 'Tenant:RatePlans:CreatePlan' | abpLocalization }}</span>
+    </button>
+  </div>
+
+  <!-- Thông báo thành công / lỗi -->
+  <div *ngIf="successMessage()" class="alert alert-success d-flex align-items-center alert-dismissible fade show mb-3">
+    <i class="fa-solid fa-circle-check me-2"></i>
+    <div>{{ successMessage() }}</div>
+    <button type="button" class="btn-close" (click)="successMessage.set(null)"></button>
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center alert-dismissible fade show mb-3">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    <div>{{ errorMessage() }}</div>
+    <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
+  </div>
+
+  <!-- Toolbar: Tìm kiếm & Đếm số lượng -->
+  <div class="toolbar-card bg-white p-3 rounded-3 border d-flex justify-content-between align-items-center mb-3">
+    <div class="search-input-wrap">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        class="form-control form-control-sm search-control"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        [placeholder]="'Tenant:RatePlans:SearchPlaceholder' | abpLocalization" />
+    </div>
+    <div class="text-muted small">
+      {{ 'Tenant:RatePlans:TotalPlans' | abpLocalization }}: <strong>{{ filteredPlans().length }}</strong> / {{ ratePlans().length }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <!-- Danh sách gói giá (Table) -->
+  <div *ngIf="!isLoading()" class="table-container bg-white rounded-3 border shadow-sm">
+    <div class="table-responsive">
+      <table class="table modern-table mb-0 align-middle">
+        <thead>
+          <tr>
+            <th class="col-name">{{ 'Tenant:RatePlans:ColName' | abpLocalization }}</th>
+            <th class="col-code">{{ 'Tenant:RatePlans:ColCode' | abpLocalization }}</th>
+            <th class="col-refund">{{ 'Tenant:RatePlans:ColRefund' | abpLocalization }}</th>
+            <th class="col-breakfast">{{ 'Tenant:RatePlans:ColBreakfast' | abpLocalization }}</th>
+            <th class="col-adjustment">{{ 'Tenant:RatePlans:ColAdjustment' | abpLocalization }}</th>
+            <th class="col-actions text-end">{{ 'Common:Actions' | abpLocalization }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let plan of filteredPlans()">
+            <td class="col-name">
+              <div class="plan-info">
+                <span class="plan-title fw-bold text-dark">{{ plan.name }}</span>
+                <span class="plan-desc text-muted small d-block" *ngIf="plan.description">{{ plan.description }}</span>
+              </div>
+            </td>
+            <td class="col-code">
+              <span class="badge bg-light text-dark border font-monospace">{{ plan.code }}</span>
+            </td>
+            <td class="col-refund">
+              <span *ngIf="plan.isRefundable" class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>{{ 'Tenant:RatePlans:RefundableWithin' | abpLocalization: (plan.cancellationCutoffHours + '') }}</span>
+              </span>
+              <span *ngIf="!plan.isRefundable" class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1">
+                <i class="fa-solid fa-ban"></i>
+                <span>{{ 'Tenant:RatePlans:NonRefundable' | abpLocalization }}</span>
+              </span>
+            </td>
+            <td class="col-breakfast">
+              <span *ngIf="plan.includesBreakfast" class="badge bg-primary-subtle text-primary border border-primary-subtle d-inline-flex align-items-center gap-1">
+                <i class="fa-solid fa-mug-hot"></i>
+                <span>{{ 'Tenant:RatePlans:BreakfastIncluded' | abpLocalization }}</span>
+              </span>
+              <span *ngIf="!plan.includesBreakfast" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                {{ 'Tenant:RatePlans:NoBreakfast' | abpLocalization }}
+              </span>
+            </td>
+            <td class="col-adjustment">
+              <span
+                class="fw-bold"
+                [ngClass]="{
+                  'text-success': plan.defaultPriceAdjustmentPercent > 0,
+                  'text-danger': plan.defaultPriceAdjustmentPercent < 0,
+                  'text-muted': plan.defaultPriceAdjustmentPercent === 0
+                }">
+                {{ plan.defaultPriceAdjustmentPercent > 0 ? '+' : '' }}{{ plan.defaultPriceAdjustmentPercent }}%
+              </span>
+            </td>
+            <td class="col-actions text-end">
+              <div class="action-buttons-wrap d-inline-flex gap-1">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary btn-action-icon"
+                  [title]="'Common:Edit' | abpLocalization"
+                  (click)="openEditModal(plan)">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger btn-action-icon"
+                  [title]="'Common:Delete' | abpLocalization"
+                  (click)="deletePlan(plan)">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredPlans().length === 0">
+            <td colspan="6" class="text-center py-5">
+              <div class="empty-state-box text-muted">
+                <i class="fa-solid fa-tags fa-3x text-secondary opacity-50 mb-3"></i>
+                <h5 class="fw-bold text-dark mb-1">{{ 'Tenant:RatePlans:EmptyTitle' | abpLocalization }}</h5>
+                <p class="small text-muted mb-3">{{ 'Tenant:RatePlans:EmptySubtitle' | abpLocalization }}</p>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="openCreateModal()">
+                  <i class="fa-solid fa-plus me-1"></i> {{ 'Tenant:RatePlans:CreatePlan' | abpLocalization }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Thêm / Chỉnh sửa Gói giá -->
+  <div class="modal-backdrop-custom" *ngIf="isModalOpen()">
+    <div class="modal-dialog-custom">
+      <div class="modal-content-custom bg-white rounded-3 shadow border">
+        <div class="modal-header-custom p-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="modal-title fw-bold mb-0">
+            <i class="fa-solid fa-tags text-primary me-2"></i>
+            {{ (editingId() ? 'Tenant:RatePlans:ModalEditTitle' : 'Tenant:RatePlans:ModalCreateTitle') | abpLocalization }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+
+        <div class="modal-body-custom p-3">
+          <div *ngIf="errorMessage()" class="alert alert-danger mb-3 py-2 small">
+            {{ errorMessage() }}
+          </div>
+
+          <!-- Tên gói giá -->
+          <div class="mb-3">
+            <label class="form-label text-dark">{{ 'Tenant:RatePlans:FormName' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="formName"
+              [placeholder]="'Tenant:RatePlans:FormNamePlaceholder' | abpLocalization"
+              maxlength="128" />
+          </div>
+
+          <!-- Mã gói giá -->
+          <div class="mb-3">
+            <label class="form-label text-dark">{{ 'Tenant:RatePlans:FormCode' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control font-monospace"
+              [(ngModel)]="formCode"
+              (input)="onCodeInput()"
+              [placeholder]="'Tenant:RatePlans:FormCodePlaceholder' | abpLocalization"
+              maxlength="32" />
+            <div class="form-text small">{{ 'Tenant:RatePlans:FormCodeHint' | abpLocalization }}</div>
+          </div>
+
+          <!-- Mô tả -->
+          <div class="mb-3">
+            <label class="form-label text-dark">{{ 'Tenant:RatePlans:FormDescription' | abpLocalization }}</label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="formDescription"
+              [placeholder]="'Tenant:RatePlans:FormDescriptionPlaceholder' | abpLocalization"
+              maxlength="512"></textarea>
+          </div>
+
+          <!-- Checkboxes chính sách -->
+          <div class="card p-3 bg-light border-0 mb-3">
+            <div class="form-check form-switch mb-2">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="checkBreakfast"
+                [(ngModel)]="formIncludesBreakfast" />
+              <label class="form-check-label fw-semibold text-dark" for="checkBreakfast">
+                {{ 'Tenant:RatePlans:FormBreakfast' | abpLocalization }}
+              </label>
+            </div>
+
+            <div class="form-check form-switch">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="checkRefundable"
+                [(ngModel)]="formIsRefundable" />
+              <label class="form-check-label fw-semibold text-dark" for="checkRefundable">
+                {{ 'Tenant:RatePlans:FormRefundable' | abpLocalization }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Thời hạn hủy (khi cho phép hoàn hủy) -->
+          <div class="mb-3" *ngIf="formIsRefundable">
+            <label class="form-label text-dark">
+              {{ 'Tenant:RatePlans:FormCutoffHours' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="formCancellationCutoffHours"
+                min="0"
+                max="720" />
+              <span class="input-group-text">{{ 'Tenant:RatePlans:Hours' | abpLocalization }}</span>
+            </div>
+            <div class="form-text small">{{ 'Tenant:RatePlans:FormCutoffHoursHint' | abpLocalization }}</div>
+          </div>
+
+          <!-- Tỷ lệ điều chỉnh giá mặc định -->
+          <div class="mb-3">
+            <label class="form-label text-dark">
+              {{ 'Tenant:RatePlans:FormAdjustmentPercent' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="formDefaultPriceAdjustmentPercent"
+                min="-99"
+                max="500"
+                step="1" />
+              <span class="input-group-text">%</span>
+            </div>
+            <div class="form-text small">{{ 'Tenant:RatePlans:FormAdjustmentPercentHint' | abpLocalization }}</div>
+          </div>
+        </div>
+
+        <div class="modal-footer-custom p-3 border-top d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">
+            {{ 'Common:Cancel' | abpLocalization }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary d-flex align-items-center gap-2"
+            [disabled]="!formName.trim() || !formCode.trim() || isSaving()"
+            (click)="save()">
+            <i class="fa-solid fa-spinner fa-spin" *ngIf="isSaving()"></i>
+            <span>{{ 'Common:Save' | abpLocalization }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

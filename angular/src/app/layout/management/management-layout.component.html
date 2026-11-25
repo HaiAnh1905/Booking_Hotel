@@ -1,0 +1,138 @@
+<div class="bh-mgmt-shell" [class.sidebar-collapsed]="isCollapsed()">
+  <!-- Dark Sidebar -->
+  <aside class="bh-mgmt-sidebar" [class.mobile-open]="isMobileSidebarOpen()">
+    <!-- Sidebar Header / Logo -->
+    <div class="sidebar-header d-flex align-items-center justify-content-between">
+      <a class="bh-brand-logo on-dark" routerLink="/">
+        <span class="logo-red">Booking</span>
+        @if (!isCollapsed()) {
+          <span class="logo-black">Hotel</span>
+        }
+      </a>
+      <button
+        type="button"
+        class="btn btn-sm btn-dark text-muted d-none d-lg-inline-block toggle-btn"
+        (click)="toggleSidebar()"
+        aria-label="Toggle sidebar"
+      >
+        <i class="fa-solid" [class.fa-chevron-left]="!isCollapsed()" [class.fa-chevron-right]="isCollapsed()"></i>
+      </button>
+      <button
+        type="button"
+        class="btn-close btn-close-white d-lg-none"
+        (click)="toggleMobileSidebar()"
+        aria-label="Close"
+      ></button>
+    </div>
+
+    <!-- Sidebar Navigation Menu -->
+    <nav class="sidebar-nav flex-grow-1 py-3">
+      <ul class="nav flex-column gap-1">
+        @for (item of menuItems; track item.route) {
+          <li class="nav-item">
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="nav-link d-flex align-items-center justify-content-between"
+              (click)="isMobileSidebarOpen.set(false)"
+              [title]="isCollapsed() ? (item.labelKey | abpLocalization) : ''"
+            >
+              <div class="d-flex align-items-center">
+                @if (item.icon) {
+                  <i [class]="item.icon + ' nav-icon'"></i>
+                }
+                @if (!isCollapsed()) {
+                  <span class="nav-label ms-3">{{ item.labelKey | abpLocalization }}</span>
+                }
+              </div>
+
+              @if (!isCollapsed() && item.badgeCount) {
+                <span class="badge rounded-pill bg-cyan text-dark fw-bold">
+                  {{ item.badgeCount }}
+                </span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- Sidebar Footer / Return to Portal -->
+    <div class="sidebar-footer p-3 border-top border-dark">
+      <a routerLink="/" class="btn btn-outline-light btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i>
+        @if (!isCollapsed()) {
+          <span>{{ 'Menu:Home' | abpLocalization }}</span>
+        }
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay Backdrop -->
+  @if (isMobileSidebarOpen()) {
+    <div class="mobile-sidebar-backdrop d-lg-none" (click)="toggleMobileSidebar()"></div>
+  }
+
+  <!-- Main View Area -->
+  <div class="bh-mgmt-main-area d-flex flex-column flex-grow-1">
+    <!-- Topbar -->
+    <header class="bh-mgmt-topbar d-flex align-items-center justify-content-between px-4">
+      <div class="d-flex align-items-center gap-3">
+        <!-- Mobile Sidebar Toggle -->
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary d-lg-none"
+          (click)="toggleMobileSidebar()"
+          aria-label="Open menu"
+        >
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Breadcrumb / Section Header -->
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <i class="fa-solid fa-shield-halved text-secondary"></i>
+          <span class="fw-semibold text-dark">{{ 'Menu:Management' | abpLocalization }}</span>
+        </div>
+      </div>
+
+      <!-- Right Topbar Controls -->
+      <div class="d-flex align-items-center gap-3">
+        <!-- Language Switcher -->
+        <bh-language-switcher></bh-language-switcher>
+
+        <!-- Profile / Logout Dropdown -->
+        <div class="dropdown position-relative">
+          <button
+            type="button"
+            class="btn btn-sm btn-light border d-flex align-items-center gap-2"
+            (click)="toggleUserMenu()"
+          >
+            <i class="fa-solid fa-user-tie text-secondary"></i>
+            <span class="d-none d-sm-inline fw-semibold small">{{ 'Menu:Profile' | abpLocalization }}</span>
+            <i class="fa-solid fa-chevron-down small text-muted"></i>
+          </button>
+
+          @if (isUserMenuOpen()) {
+            <div class="dropdown-menu dropdown-menu-end show shadow-sm p-2" style="min-width: 180px;">
+              <a routerLink="/" class="dropdown-item small" (click)="isUserMenuOpen.set(false)">
+                <i class="fa-solid fa-arrow-left me-2 text-muted"></i>
+                {{ 'Menu:Home' | abpLocalization }}
+              </a>
+              <div class="dropdown-divider"></div>
+              <button type="button" class="dropdown-item text-danger small" (click)="logout()">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>
+                {{ 'Menu:Logout' | abpLocalization }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Viewport -->
+    <main class="bh-mgmt-content flex-grow-1 p-3 p-md-4">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+

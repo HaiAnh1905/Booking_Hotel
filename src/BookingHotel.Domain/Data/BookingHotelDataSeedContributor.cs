@@ -2,9 +2,12 @@ using System;
 using System.Threading.Tasks;
 using BookingHotel.Identity;
 using BookingHotel.Permissions;
+using BookingHotel.Approvals;
+using BookingHotel.Rooms;
 using Microsoft.AspNetCore.Identity;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
@@ -19,17 +22,23 @@ public class BookingHotelDataSeedContributor : IDataSeedContributor, ITransientD
     private readonly IPermissionManager _permissionManager;
     private readonly IGuidGenerator _guidGenerator;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IRepository<OperationalApprovalTicket, Guid> _approvalTicketRepository;
+    private readonly IRepository<RatePlan, Guid> _ratePlanRepository;
 
     public BookingHotelDataSeedContributor(
         IdentityRoleManager roleManager,
         IPermissionManager permissionManager,
         IGuidGenerator guidGenerator,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IRepository<OperationalApprovalTicket, Guid> approvalTicketRepository,
+        IRepository<RatePlan, Guid> ratePlanRepository)
     {
         _roleManager = roleManager;
         _permissionManager = permissionManager;
         _guidGenerator = guidGenerator;
         _currentTenant = currentTenant;
+        _approvalTicketRepository = approvalTicketRepository;
+        _ratePlanRepository = ratePlanRepository;
     }
 
     [UnitOfWork]
@@ -61,7 +70,18 @@ public class BookingHotelDataSeedContributor : IDataSeedContributor, ITransientD
                     BookingHotelPermissions.Tenants.Edit,
                     BookingHotelPermissions.Tenants.Delete,
                     BookingHotelPermissions.Tenants.Suspend,
-                    BookingHotelPermissions.Identity.UnlockUser
+                    BookingHotelPermissions.Identity.UnlockUser,
+                    BookingHotelPermissions.Hotels.Default,
+                    "AbpIdentity.Users",
+                    "AbpIdentity.Users.Create",
+                    "AbpIdentity.Users.Update",
+                    "AbpIdentity.Users.Delete",
+                    "AbpIdentity.Users.ManagePermissions",
+                    "AbpIdentity.Roles",
+                    "AbpIdentity.Roles.Create",
+                    "AbpIdentity.Roles.Update",
+                    "AbpIdentity.Roles.Delete",
+                    "AbpIdentity.Roles.ManagePermissions"
                 });
 
             // 2. Customer Role (Global Customer at Host level)
@@ -114,6 +134,11 @@ public class BookingHotelDataSeedContributor : IDataSeedContributor, ITransientD
                     BookingHotelPermissions.Folios.Settle,
                     BookingHotelPermissions.Folios.Refund,
                     BookingHotelPermissions.Identity.UnlockUser,
+                    BookingHotelPermissions.Guests.Default,
+                    BookingHotelPermissions.Guests.ManageNotes,
+                    BookingHotelPermissions.Reviews.Default,
+                    BookingHotelPermissions.Reviews.Reply,
+                    BookingHotelPermissions.Reviews.ManageComplaints,
                     BookingHotelPermissions.Reports.Default,
                     BookingHotelPermissions.Reports.Consolidated,
                     BookingHotelPermissions.Reports.HotelPerformance
@@ -139,6 +164,11 @@ public class BookingHotelDataSeedContributor : IDataSeedContributor, ITransientD
                     BookingHotelPermissions.Bookings.CheckOut,
                     BookingHotelPermissions.Bookings.Cancel,
                     BookingHotelPermissions.Bookings.ApproveException,
+                    BookingHotelPermissions.Guests.Default,
+                    BookingHotelPermissions.Guests.ManageNotes,
+                    BookingHotelPermissions.Reviews.Default,
+                    BookingHotelPermissions.Reviews.Reply,
+                    BookingHotelPermissions.Reviews.ManageComplaints,
                     BookingHotelPermissions.Folios.Default,
                     BookingHotelPermissions.Folios.View,
                     BookingHotelPermissions.Folios.AddCharge,
@@ -167,6 +197,63 @@ public class BookingHotelDataSeedContributor : IDataSeedContributor, ITransientD
                     BookingHotelPermissions.Folios.AddCharge,
                     BookingHotelPermissions.Folios.Settle
                 });
+
+            // 4. Sample Operational Approval Ticket
+            if (await _approvalTicketRepository.GetCountAsync() == 0)
+            {
+                var sampleHotelId = Guid.Parse("4d5e8241-1111-2222-3333-444455556666");
+                var staffId = _guidGenerator.Create();
+                var ticket = new OperationalApprovalTicket(
+                    _guidGenerator.Create(),
+                    sampleHotelId,
+                    ApprovalTicketType.DiscountOverride,
+                    staffId,
+                    "Nguyễn Văn Lễ Tân",
+                    "Khách VIP kỷ niệm ngày cưới muốn xin chiết khấu phòng 15%",
+                    tenantId,
+                    roomNumber: "P.302",
+                    amount: 250000,
+                    discountPercent: 15);
+
+                await _approvalTicketRepository.InsertAsync(ticket, autoSave: true);
+            }
+
+            // 5. Default Rate Plans (Gói giá phòng chuỗi)
+            if (await _ratePlanRepository.GetCountAsync() == 0)
+            {
+                await _ratePlanRepository.InsertAsync(new RatePlan(
+                    _guidGenerator.Create(),
+                    "Gói Tiêu Chuẩn Linh Hoạt",
+                    "STANDARD",
+                    "Cho phép hủy miễn phí trước 24 giờ. Không bao gồm bữa sáng.",
+                    isRefundable: true,
+                    includesBreakfast: false,
+                    cancellationCutoffHours: 24,
+                    defaultPriceAdjustmentPercent: 0m,
+                    tenantId), autoSave: true);
+
+                await _ratePlanRepository.InsertAsync(new RatePlan(
+                    _guidGenerator.Create(),
+                    "Gói Kèm Buffet Sáng",
+                    "BED_AND_BREAKFAST",
+                    "Bao gồm buffet ăn sáng hàng ngày cho số khách tiêu chuẩn. Hủy linh hoạt trước 24 giờ.",
+                    isRefundable: true,
+                    includesBreakfast: true,
+                    cancellationCutoffHours: 24,
+                    defaultPriceAdjustmentPercent: 10m,
+                    tenantId), autoSave: true);
+
+                await _ratePlanRepository.InsertAsync(new RatePlan(
+                    _guidGenerator.Create(),
+                    "Gói Tiết Kiệm Không Hoàn Hủy",
+                    "NON_REFUNDABLE",
+                    "Ưu đãi giảm 10% giá phòng. Thanh toán ngay, không áp dụng hoàn tiền hoặc hủy đổi.",
+                    isRefundable: false,
+                    includesBreakfast: false,
+                    cancellationCutoffHours: 0,
+                    defaultPriceAdjustmentPercent: -10m,
+                    tenantId), autoSave: true);
+            }
         }
     }
 

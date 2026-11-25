@@ -21,11 +21,11 @@ public class BookingHotelPermissionDefinitionProvider : PermissionDefinitionProv
         tenantsPermission.AddChild(BookingHotelPermissions.Tenants.Delete, L("Permission:Tenants.Delete"), multiTenancySide: MultiTenancySides.Host);
         tenantsPermission.AddChild(BookingHotelPermissions.Tenants.Suspend, L("Permission:Tenants.Suspend"), multiTenancySide: MultiTenancySides.Host);
 
-        // Phân hệ Khách sạn / Chi nhánh (Tenant)
+        // Phân hệ Khách sạn / Chi nhánh (Both: Host có thể xem danh sách, Tenant quản trị chi tiết)
         var hotelsPermission = myGroup.AddPermission(
             BookingHotelPermissions.Hotels.Default,
             L("Permission:Hotels"),
-            multiTenancySide: MultiTenancySides.Tenant);
+            multiTenancySide: MultiTenancySides.Both);
         hotelsPermission.AddChild(BookingHotelPermissions.Hotels.Create, L("Permission:Hotels.Create"), multiTenancySide: MultiTenancySides.Tenant);
         hotelsPermission.AddChild(BookingHotelPermissions.Hotels.Edit, L("Permission:Hotels.Edit"), multiTenancySide: MultiTenancySides.Tenant);
         hotelsPermission.AddChild(BookingHotelPermissions.Hotels.Delete, L("Permission:Hotels.Delete"), multiTenancySide: MultiTenancySides.Tenant);
@@ -42,6 +42,10 @@ public class BookingHotelPermissionDefinitionProvider : PermissionDefinitionProv
         roomsPermission.AddChild(BookingHotelPermissions.Rooms.Delete, L("Permission:Rooms.Delete"), multiTenancySide: MultiTenancySides.Tenant);
         roomsPermission.AddChild(BookingHotelPermissions.Rooms.SetRates, L("Permission:Rooms.SetRates"), multiTenancySide: MultiTenancySides.Tenant);
         roomsPermission.AddChild(BookingHotelPermissions.Rooms.UpdateStatus, L("Permission:Rooms.UpdateStatus"), multiTenancySide: MultiTenancySides.Tenant);
+        roomsPermission.AddChild(BookingHotelPermissions.Rooms.ChangeStatus, L("Permission:Rooms.ChangeStatus"), multiTenancySide: MultiTenancySides.Tenant);
+        roomsPermission.AddChild(BookingHotelPermissions.Rooms.UpdateHousekeeping, L("Permission:Rooms.UpdateHousekeeping"), multiTenancySide: MultiTenancySides.Tenant);
+        roomsPermission.AddChild(BookingHotelPermissions.Rooms.ManageClosures, L("Permission:Rooms.ManageClosures"), multiTenancySide: MultiTenancySides.Tenant);
+        roomsPermission.AddChild(BookingHotelPermissions.Rooms.ResolveIncidents, L("Permission:Rooms.ResolveIncidents"), multiTenancySide: MultiTenancySides.Tenant);
 
         // Phân hệ Đặt phòng & Tiếp đón (Both)
         var bookingsPermission = myGroup.AddPermission(
@@ -49,10 +53,36 @@ public class BookingHotelPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:Bookings"),
             multiTenancySide: MultiTenancySides.Both);
         bookingsPermission.AddChild(BookingHotelPermissions.Bookings.Create, L("Permission:Bookings.Create"), multiTenancySide: MultiTenancySides.Both);
+        bookingsPermission.AddChild(BookingHotelPermissions.Bookings.Confirm, L("Permission:Bookings.Confirm"), multiTenancySide: MultiTenancySides.Tenant);
+        bookingsPermission.AddChild(BookingHotelPermissions.Bookings.Reject, L("Permission:Bookings.Reject"), multiTenancySide: MultiTenancySides.Tenant);
+        bookingsPermission.AddChild(BookingHotelPermissions.Bookings.MarkNoShow, L("Permission:Bookings.MarkNoShow"), multiTenancySide: MultiTenancySides.Tenant);
+        bookingsPermission.AddChild(BookingHotelPermissions.Bookings.AssignRoom, L("Permission:Bookings.AssignRoom"), multiTenancySide: MultiTenancySides.Tenant);
         bookingsPermission.AddChild(BookingHotelPermissions.Bookings.CheckIn, L("Permission:Bookings.CheckIn"), multiTenancySide: MultiTenancySides.Tenant);
         bookingsPermission.AddChild(BookingHotelPermissions.Bookings.CheckOut, L("Permission:Bookings.CheckOut"), multiTenancySide: MultiTenancySides.Tenant);
         bookingsPermission.AddChild(BookingHotelPermissions.Bookings.Cancel, L("Permission:Bookings.Cancel"), multiTenancySide: MultiTenancySides.Both);
         bookingsPermission.AddChild(BookingHotelPermissions.Bookings.ApproveException, L("Permission:Bookings.ApproveException"), multiTenancySide: MultiTenancySides.Tenant);
+
+        // Phân hệ Quản lý Gói Giá Chuỗi (Tenant)
+        var ratePlansPermission = myGroup.AddPermission(
+            BookingHotelPermissions.RatePlans.Default,
+            L("Permission:RatePlans"),
+            multiTenancySide: MultiTenancySides.Tenant);
+        ratePlansPermission.AddChild(BookingHotelPermissions.RatePlans.Manage, L("Permission:RatePlans.Manage"), multiTenancySide: MultiTenancySides.Tenant);
+
+        // Phân hệ Khách hàng (Tenant)
+        var guestsPermission = myGroup.AddPermission(
+            BookingHotelPermissions.Guests.Default,
+            L("Permission:Guests"),
+            multiTenancySide: MultiTenancySides.Tenant);
+        guestsPermission.AddChild(BookingHotelPermissions.Guests.ManageNotes, L("Permission:Guests.ManageNotes"), multiTenancySide: MultiTenancySides.Tenant);
+
+        // Phân hệ Đánh giá & Khiếu nại (Tenant)
+        var reviewsPermission = myGroup.AddPermission(
+            BookingHotelPermissions.Reviews.Default,
+            L("Permission:Reviews"),
+            multiTenancySide: MultiTenancySides.Tenant);
+        reviewsPermission.AddChild(BookingHotelPermissions.Reviews.Reply, L("Permission:Reviews.Reply"), multiTenancySide: MultiTenancySides.Tenant);
+        reviewsPermission.AddChild(BookingHotelPermissions.Reviews.ManageComplaints, L("Permission:Reviews.ManageComplaints"), multiTenancySide: MultiTenancySides.Tenant);
 
         // Phân hệ Hóa đơn & Thu ngân (Both)
         var foliosPermission = myGroup.AddPermission(

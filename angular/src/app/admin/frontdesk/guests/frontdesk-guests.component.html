@@ -1,0 +1,172 @@
+<div class="frontdesk-guests-page">
+  <div class="page-header-bar">
+    <div>
+      <h1 class="page-title">{{ 'Frontdesk:GuestsTitle' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Frontdesk:GuestsSubtitle' | abpLocalization }}</p>
+    </div>
+
+    <div class="header-tools">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          [placeholder]="'Frontdesk:SearchGuestPlaceholder' | abpLocalization"
+          [ngModel]="keyword()"
+          (ngModelChange)="keyword.set($event)"
+          (keyup.enter)="onSearch()" />
+      </div>
+      <button type="button" class="btn-frontdesk-primary" (click)="onSearch()">
+        {{ 'Common:Search' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="state-card">
+    <bh-loading-spinner></bh-loading-spinner>
+  </div>
+
+  <div *ngIf="!isLoading() && items().length === 0" class="state-card">
+    <bh-empty-state
+      iconClass="fa-solid fa-users"
+      titleKey="Frontdesk:EmptyGuestsTitle"
+      descriptionKey="Frontdesk:EmptyGuestsDesc">
+    </bh-empty-state>
+  </div>
+
+  <div *ngIf="!isLoading() && items().length > 0" class="table-card">
+    <bh-data-table
+      [columns]="tableColumns"
+      [items]="items()"
+      [pagination]="pagination()"
+      (pageChange)="onPageChange($event)">
+
+      <ng-template #cellTemplate let-item let-column="column">
+        <ng-container *ngIf="column.field === 'fullName'">
+          <button type="button" class="name-link" (click)="openDetail(item.guestKey)">
+            {{ item.fullName }}
+          </button>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'phoneNumber'">
+          <span>{{ item.phoneNumber }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'email'">
+          <span>{{ item.email || '—' }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'identityNumberMasked'">
+          <span>{{ item.identityNumberMasked || '—' }}</span>
+          <i *ngIf="item.isIdentityVerified" class="fa-solid fa-shield-check text-success ms-1" [title]="'Frontdesk:IdentityVerified' | abpLocalization"></i>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'totalBookingsCount'">
+          <strong>{{ item.totalBookingsCount }}</strong>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'lastCheckInDate'">
+          <span>{{ item.lastCheckInDate ? (item.lastCheckInDate | date:'dd/MM/yyyy') : '—' }}</span>
+        </ng-container>
+        <ng-container *ngIf="column.field === 'actions'">
+          <button type="button" class="icon-btn" (click)="openDetail(item.guestKey)">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </ng-container>
+      </ng-template>
+    </bh-data-table>
+  </div>
+
+  <!-- Guest Detail Drawer -->
+  <div class="drawer-backdrop" *ngIf="selectedGuest() || isLoadingDetail()" (click)="closeDetail()"></div>
+  <aside class="detail-drawer" *ngIf="selectedGuest() || isLoadingDetail()">
+    <div class="drawer-header">
+      <h2>{{ 'Frontdesk:GuestDetailTitle' | abpLocalization }}</h2>
+      <button type="button" class="drawer-close" (click)="closeDetail()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body" *ngIf="isLoadingDetail()">
+      <bh-loading-spinner></bh-loading-spinner>
+    </div>
+
+    <div class="drawer-body" *ngIf="!isLoadingDetail() && selectedGuest() as g">
+      <div class="profile-card">
+        <div class="profile-head">
+          <div>
+            <h3>{{ g.fullName }}</h3>
+            <span class="sub">{{ g.phoneNumber }} • {{ g.email || '—' }}</span>
+          </div>
+          <button type="button" class="btn-frontdesk-primary" (click)="openEditModal()">
+            <i class="fa-solid fa-pen"></i> {{ 'Frontdesk:ActionEditInfo' | abpLocalization }}
+          </button>
+        </div>
+
+        <div class="profile-meta">
+          <div>
+            <span>{{ 'Frontdesk:IdentityNumber' | abpLocalization }}:</span>
+            <strong>{{ g.identityNumberMasked || '—' }}</strong>
+            <span *ngIf="g.isIdentityVerified" class="verified-pill">{{ 'Frontdesk:IdentityVerified' | abpLocalization }}</span>
+          </div>
+          <div>
+            <span>{{ 'Frontdesk:ColBookingsCount' | abpLocalization }}:</span>
+            <strong>{{ g.totalBookingsCount }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <section class="history-section">
+        <h4>{{ 'Frontdesk:GuestBookingHistory' | abpLocalization }}</h4>
+        <div *ngFor="let b of g.bookings" class="history-item" (click)="goToReservation(b.bookingId)">
+          <div class="h-top">
+            <strong>{{ b.bookingCode }}</strong>
+            <bh-status-badge [variant]="getStatusVariant(b.bookingStatus)">
+              {{ ('Frontdesk:BookingStatus_' + b.bookingStatus) | abpLocalization }}
+            </bh-status-badge>
+          </div>
+          <div class="h-meta">
+            <span>{{ b.roomTypeName || '—' }} <ng-container *ngIf="b.assignedRoomNumber">• {{ b.assignedRoomNumber }}</ng-container></span>
+            <span>{{ b.checkInDate | date:'dd/MM/yyyy' }} – {{ b.checkOutDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Edit Guest Modal -->
+  <bh-modal
+    [isOpen]="isEditModalOpen()"
+    [config]="editModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitEdit()"
+    (cancel)="isEditModalOpen.set(false)">
+    <div class="modal-form">
+      <div class="alert-info-box">
+        <i class="fa-solid fa-circle-info"></i>
+        {{ 'Frontdesk:EditGuestSyncNote' | abpLocalization }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColFullName' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [ngModel]="editFullName()" (ngModelChange)="editFullName.set($event)" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColPhone' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [ngModel]="editPhone()" (ngModelChange)="editPhone.set($event)" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColEmail' | abpLocalization }}</label>
+        <input type="email" class="form-control" [ngModel]="editEmail()" (ngModelChange)="editEmail.set($event)" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:IdentityNumber' | abpLocalization }}</label>
+        <input
+          type="text"
+          class="form-control"
+          [placeholder]="'Frontdesk:IdentityInputPlaceholder' | abpLocalization"
+          [ngModel]="editIdentityNumber()"
+          (ngModelChange)="editIdentityNumber.set($event)" />
+        <small class="form-hint">{{ 'Frontdesk:IdentityMaskHint' | abpLocalization }}</small>
+      </div>
+    </div>
+  </bh-modal>
+</div>

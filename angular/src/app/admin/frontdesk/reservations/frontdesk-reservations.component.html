@@ -1,0 +1,362 @@
+<div class="frontdesk-reservations-page">
+  <div class="page-header-bar">
+    <div>
+      <h1 class="page-title">{{ 'Frontdesk:ReservationsTitle' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Frontdesk:ReservationsSubtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn-refresh" [disabled]="isLoading()" (click)="loadList()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ 'RoomRack:Refresh' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Filter Toolbar -->
+  <div class="filter-panel">
+    <div class="filter-grid">
+      <div class="filter-cell search-cell">
+        <label class="form-label">{{ 'Common:Search' | abpLocalization }}</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="text"
+            class="form-control"
+            [placeholder]="'Frontdesk:SearchReservationPlaceholder' | abpLocalization"
+            [ngModel]="keyword()"
+            (ngModelChange)="keyword.set($event)"
+            (keyup.enter)="applyFilters()" />
+        </div>
+      </div>
+
+      <div class="filter-cell">
+        <label class="form-label">{{ 'Frontdesk:FilterStatus' | abpLocalization }}</label>
+        <bh-searchable-select
+          [options]="statusOptions()"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="selectedStatus.set($event); applyFilters()">
+        </bh-searchable-select>
+      </div>
+
+      <div class="filter-cell">
+        <label class="form-label">{{ 'Frontdesk:FilterRoomAssign' | abpLocalization }}</label>
+        <bh-searchable-select
+          [options]="assignmentOptions()"
+          [ngModel]="selectedAssignmentStatus()"
+          (ngModelChange)="selectedAssignmentStatus.set($event); applyFilters()">
+        </bh-searchable-select>
+      </div>
+
+      <div class="filter-cell">
+        <label class="form-label">{{ 'Frontdesk:FilterFromDate' | abpLocalization }}</label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="fromDate()"
+          (ngModelChange)="fromDate.set($event); applyFilters()" />
+      </div>
+
+      <div class="filter-cell">
+        <label class="form-label">{{ 'Frontdesk:FilterToDate' | abpLocalization }}</label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="toDate()"
+          (ngModelChange)="toDate.set($event); applyFilters()" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="btn-frontdesk-primary" (click)="applyFilters()">
+          <i class="fa-solid fa-filter"></i> {{ 'Common:Search' | abpLocalization }}
+        </button>
+        <button type="button" class="btn-frontdesk-outline" (click)="resetFilters()">
+          {{ 'Common:Reset' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- States -->
+  <div *ngIf="isLoading()" class="state-card">
+    <bh-loading-spinner></bh-loading-spinner>
+  </div>
+
+  <div *ngIf="!isLoading() && items().length === 0" class="state-card">
+    <bh-empty-state
+      iconClass="fa-solid fa-calendar-xmark"
+      titleKey="Frontdesk:EmptyReservationsTitle"
+      descriptionKey="Frontdesk:EmptyReservationsDesc"
+      actionButtonKey="Common:Reset"
+      (action)="resetFilters()">
+    </bh-empty-state>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!isLoading() && items().length > 0" class="table-card">
+    <bh-data-table
+      [columns]="tableColumns"
+      [items]="items()"
+      [pagination]="pagination()"
+      (pageChange)="onPageChange($event)">
+
+      <ng-template #cellTemplate let-item let-column="column">
+        <ng-container *ngIf="column.field === 'bookingCode'">
+          <button type="button" class="code-link" (click)="openDetail(item.id)">
+            {{ item.bookingCode }}
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'guest'">
+          <div class="cell-primary">{{ item.guestFullName }}</div>
+          <div class="cell-sub">{{ item.guestPhone }}</div>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'room'">
+          <div class="cell-primary">{{ item.roomTypeName || '—' }}</div>
+          <div class="cell-sub">
+            <span *ngIf="item.assignedRoomNumber" class="room-chip">{{ item.assignedRoomNumber }}</span>
+            <span *ngIf="!item.assignedRoomNumber" class="text-muted">{{ 'Frontdesk:Unassigned' | abpLocalization }}</span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'dates'">
+          <div class="cell-primary">{{ item.checkInDate | date:'dd/MM/yyyy' }} → {{ item.checkOutDate | date:'dd/MM/yyyy' }}</div>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'status'">
+          <bh-status-badge [variant]="getStatusVariant(item.bookingStatus)">
+            {{ ('Frontdesk:BookingStatus_' + item.bookingStatus) | abpLocalization }}
+          </bh-status-badge>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'payment'">
+          <div class="cell-primary">{{ item.totalAmount | number }} ₫</div>
+          <div class="cell-sub">{{ ('Frontdesk:PaymentStatus_' + item.paymentStatus) | abpLocalization }}</div>
+        </ng-container>
+
+        <ng-container *ngIf="column.field === 'actions'">
+          <div class="row-actions">
+            <button type="button" class="icon-btn" (click)="openDetail(item.id)" [title]="'Frontdesk:ViewReservation' | abpLocalization">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button
+              *ngIf="item.bookingStatus === BookingStatus.Confirmed"
+              type="button"
+              class="btn-frontdesk-primary btn-xs"
+              (click)="goToCheckIn(item.id)">
+              {{ 'RoomRack:CheckInAction' | abpLocalization }}
+            </button>
+            <button
+              *ngIf="item.bookingStatus === BookingStatus.CheckedIn"
+              type="button"
+              class="btn-checkout-sm btn-xs"
+              (click)="goToCheckOut(item.id)">
+              {{ 'RoomRack:CheckOutAction' | abpLocalization }}
+            </button>
+          </div>
+        </ng-container>
+      </ng-template>
+    </bh-data-table>
+  </div>
+
+  <!-- Detail Slide-Over Drawer -->
+  <div class="drawer-backdrop" *ngIf="selectedDetail() || isLoadingDetail()" (click)="closeDetail()"></div>
+  <aside class="detail-drawer" *ngIf="selectedDetail() || isLoadingDetail()">
+    <div class="drawer-header">
+      <h2>{{ 'Frontdesk:ReservationDetailTitle' | abpLocalization }}</h2>
+      <button type="button" class="drawer-close" (click)="closeDetail()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body" *ngIf="isLoadingDetail()">
+      <bh-loading-spinner></bh-loading-spinner>
+    </div>
+
+    <div class="drawer-body" *ngIf="!isLoadingDetail() && selectedDetail() as d">
+      <div class="detail-top-banner">
+        <div>
+          <span class="detail-code">{{ d.bookingCode }}</span>
+          <div class="detail-dates">{{ d.checkInDate | date:'dd/MM/yyyy' }} → {{ d.checkOutDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+        <bh-status-badge [variant]="getStatusVariant(d.bookingStatus)">
+          {{ ('Frontdesk:BookingStatus_' + d.bookingStatus) | abpLocalization }}
+        </bh-status-badge>
+      </div>
+
+      <!-- Action Buttons (Strict RM-012 Scope: Confirm, Assign/Change Room, Edit Info, Cancel, Check-in/out; NO Reject/No-Show/Price edit) -->
+      <div class="drawer-action-bar">
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.PendingConfirmation"
+          type="button"
+          class="btn-frontdesk-primary"
+          (click)="openConfirmModal()">
+          <i class="fa-solid fa-check"></i> {{ 'Frontdesk:ActionConfirm' | abpLocalization }}
+        </button>
+
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.PendingConfirmation || d.bookingStatus === BookingStatus.Confirmed || d.bookingStatus === BookingStatus.CheckedIn"
+          type="button"
+          class="btn-frontdesk-outline"
+          (click)="openAssignRoomModal()">
+          <i class="fa-solid fa-key"></i> {{ 'Frontdesk:ActionAssignRoom' | abpLocalization }}
+        </button>
+
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.PendingConfirmation || d.bookingStatus === BookingStatus.Confirmed || d.bookingStatus === BookingStatus.CheckedIn"
+          type="button"
+          class="btn-frontdesk-outline"
+          (click)="openEditModal()">
+          <i class="fa-solid fa-pen"></i> {{ 'Frontdesk:ActionEditInfo' | abpLocalization }}
+        </button>
+
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.Confirmed"
+          type="button"
+          class="btn-frontdesk-primary"
+          (click)="goToCheckIn(d.id)">
+          <i class="fa-solid fa-user-check"></i> {{ 'RoomRack:CheckInAction' | abpLocalization }}
+        </button>
+
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.CheckedIn"
+          type="button"
+          class="btn-checkout-sm"
+          (click)="goToCheckOut(d.id)">
+          <i class="fa-solid fa-door-open"></i> {{ 'RoomRack:CheckOutAction' | abpLocalization }}
+        </button>
+
+        <button
+          *ngIf="d.bookingStatus === BookingStatus.PendingConfirmation || d.bookingStatus === BookingStatus.Confirmed"
+          type="button"
+          class="btn-danger-outline"
+          (click)="openCancelModal()">
+          <i class="fa-solid fa-ban"></i> {{ 'Frontdesk:ActionCancel' | abpLocalization }}
+        </button>
+      </div>
+
+      <!-- Guest Section -->
+      <section class="info-box">
+        <h3>{{ 'Frontdesk:GuestInfoSection' | abpLocalization }}</h3>
+        <div class="info-row"><span>{{ 'Frontdesk:ColFullName' | abpLocalization }}</span><strong>{{ d.guestFullName }}</strong></div>
+        <div class="info-row"><span>{{ 'Frontdesk:ColPhone' | abpLocalization }}</span><strong>{{ d.guestPhone }}</strong></div>
+        <div class="info-row"><span>{{ 'Frontdesk:ColEmail' | abpLocalization }}</span><strong>{{ d.guestEmail || '—' }}</strong></div>
+        <div class="info-row">
+          <span>{{ 'Frontdesk:IdentityNumber' | abpLocalization }}</span>
+          <strong>
+            {{ d.guestIdentityNumberMasked || '—' }}
+            <span *ngIf="d.isIdentityVerified" class="verified-pill">
+              <i class="fa-solid fa-shield-check"></i> {{ 'Frontdesk:IdentityVerified' | abpLocalization }}
+            </span>
+          </strong>
+        </div>
+      </section>
+
+      <!-- Stay & Room Section -->
+      <section class="info-box">
+        <h3>{{ 'Frontdesk:StayInfoSection' | abpLocalization }}</h3>
+        <div class="info-row"><span>{{ 'RoomRack:ColRoomType' | abpLocalization }}</span><strong>{{ d.roomTypeName || '—' }}</strong></div>
+        <div class="info-row"><span>{{ 'Approvals:RoomNumber' | abpLocalization }}</span><strong>{{ d.assignedRoomNumber || ('Frontdesk:Unassigned' | abpLocalization) }}</strong></div>
+        <div class="info-row" *ngIf="d.actualCheckInTime"><span>{{ 'Frontdesk:ActualCheckIn' | abpLocalization }}</span><strong>{{ d.actualCheckInTime | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+        <div class="info-row" *ngIf="d.actualCheckOutTime"><span>{{ 'Frontdesk:ActualCheckOut' | abpLocalization }}</span><strong>{{ d.actualCheckOutTime | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+        <div class="info-row" *ngIf="d.specialRequests"><span>{{ 'Frontdesk:SpecialRequests' | abpLocalization }}</span><strong>{{ d.specialRequests }}</strong></div>
+        <div class="info-row" *ngIf="d.frontdeskNotes"><span>{{ 'Frontdesk:FrontdeskNotes' | abpLocalization }}</span><strong>{{ d.frontdeskNotes }}</strong></div>
+        <div class="info-row" *ngIf="d.cancellationReason"><span>{{ 'Frontdesk:CancellationReason' | abpLocalization }}</span><strong class="text-danger">{{ d.cancellationReason }}</strong></div>
+      </section>
+
+      <!-- Financial Section (Strictly Read-Only) -->
+      <section class="info-box readonly-box">
+        <h3>{{ 'Frontdesk:FinancialInfoSection' | abpLocalization }}</h3>
+        <div class="info-row"><span>{{ 'Frontdesk:TotalAmount' | abpLocalization }}</span><strong>{{ d.totalAmount | number }} ₫</strong></div>
+        <div class="info-row"><span>{{ 'Frontdesk:DepositAmount' | abpLocalization }}</span><strong>{{ d.depositAmount | number }} ₫</strong></div>
+        <div class="info-row"><span>{{ 'Frontdesk:PaymentStatusLabel' | abpLocalization }}</span><strong>{{ ('Frontdesk:PaymentStatus_' + d.paymentStatus) | abpLocalization }}</strong></div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Confirm Modal -->
+  <bh-modal
+    [isOpen]="isConfirmModalOpen()"
+    [config]="confirmModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitConfirm()"
+    (cancel)="isConfirmModalOpen.set(false)">
+    <p class="mb-0" *ngIf="selectedDetail() as d">
+      {{ 'Frontdesk:ConfirmBookingConfirm' | abpLocalization: d.bookingCode }}
+    </p>
+  </bh-modal>
+
+  <!-- Assign Room Modal -->
+  <bh-modal
+    [isOpen]="isAssignModalOpen()"
+    [config]="assignModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitAssignRoom()"
+    (cancel)="isAssignModalOpen.set(false)">
+    <div class="modal-form">
+      <label class="form-label">
+        {{ 'Frontdesk:SelectAvailableRoom' | abpLocalization }} <span class="text-danger">*</span>
+      </label>
+      <div *ngIf="availableRooms().length === 0" class="alert-muted">
+        {{ 'Frontdesk:NoAvailableRooms' | abpLocalization }}
+      </div>
+      <bh-searchable-select
+        *ngIf="availableRooms().length > 0"
+        [options]="availableRoomOptions()"
+        [ngModel]="selectedRoomId()"
+        (ngModelChange)="selectedRoomId.set($event)">
+      </bh-searchable-select>
+    </div>
+  </bh-modal>
+
+  <!-- Edit Operational Info Modal -->
+  <bh-modal
+    [isOpen]="isEditModalOpen()"
+    [config]="editModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitEdit()"
+    (cancel)="isEditModalOpen.set(false)">
+    <div class="modal-form">
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColFullName' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [ngModel]="editGuestFullName()" (ngModelChange)="editGuestFullName.set($event)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColPhone' | abpLocalization }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [ngModel]="editGuestPhone()" (ngModelChange)="editGuestPhone.set($event)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:ColEmail' | abpLocalization }}</label>
+        <input type="email" class="form-control" [ngModel]="editGuestEmail()" (ngModelChange)="editGuestEmail.set($event)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:SpecialRequests' | abpLocalization }}</label>
+        <textarea rows="2" class="form-control" [ngModel]="editSpecialRequests()" (ngModelChange)="editSpecialRequests.set($event)"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:FrontdeskNotes' | abpLocalization }}</label>
+        <textarea rows="2" class="form-control" [ngModel]="editFrontdeskNotes()" (ngModelChange)="editFrontdeskNotes.set($event)"></textarea>
+      </div>
+    </div>
+  </bh-modal>
+
+  <!-- Cancel Booking Modal -->
+  <bh-modal
+    [isOpen]="isCancelModalOpen()"
+    [config]="cancelModalConfig"
+    [busy]="isBusy()"
+    (confirm)="submitCancel()"
+    (cancel)="isCancelModalOpen.set(false)">
+    <div class="modal-form">
+      <div class="alert-warning-box">{{ 'Frontdesk:CancelBookingWarning' | abpLocalization }}</div>
+      <div class="form-group">
+        <label class="form-label">{{ 'Frontdesk:CancellationReason' | abpLocalization }} <span class="text-danger">*</span></label>
+        <textarea
+          rows="3"
+          class="form-control"
+          [placeholder]="'Frontdesk:CancelReasonPlaceholder' | abpLocalization"
+          [ngModel]="cancelReason()"
+          (ngModelChange)="cancelReason.set($event)">
+        </textarea>
+      </div>
+    </div>
+  </bh-modal>
+</div>

@@ -1,0 +1,263 @@
+.pricing-calendar-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.selected-plan-pill {
+  background: #000000;
+  color: #00ffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+
+  .btn {
+    height: 38px;
+    min-width: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+  }
+}
+
+.calendar-select {
+  display: block;
+
+  ::ng-deep .bh-select-trigger {
+    height: 38px;
+    padding: 0 0.7rem;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+
+    .selected-label {
+      font-weight: 600;
+      font-size: 0.86rem;
+    }
+  }
+}
+
+.month-select {
+  width: 104px;
+}
+
+.year-select {
+  width: 102px;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.dot-base {
+  background: #f8fafc;
+  border: 1px solid #94a3b8;
+}
+
+.dot-override {
+  background: #ecfeff;
+  border: 1.5px solid #06b6d4;
+}
+
+.dot-restriction {
+  background: #fee2e2;
+  border: 1px solid #dc2626;
+}
+
+.dot-past {
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+}
+
+.calendar-grid-wrapper {
+  overflow-x: auto;
+}
+
+.calendar-weekdays,
+.calendar-cells {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(95px, 1fr));
+  gap: 8px;
+}
+
+.calendar-weekdays {
+  margin-bottom: 10px;
+}
+
+.weekday-header {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  padding: 0.5rem 0;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.day-cell {
+  text-align: left;
+  min-height: 86px;
+  padding: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+
+  &:hover:not(.padding-cell) {
+    border-color: #06b6d4;
+    box-shadow: 0 3px 10px rgba(6, 182, 212, 0.14);
+    transform: translateY(-1px);
+  }
+
+  &.padding-cell {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+  }
+
+  &.is-overridden {
+    background: #ecfeff;
+    border-color: #06b6d4;
+  }
+
+  &.is-past {
+    background: #f8fafc;
+    border-style: dashed;
+    opacity: 0.72;
+  }
+
+  &.is-today {
+    border: 2px solid #000000;
+    box-shadow: inset 0 0 0 1px #00ffff;
+  }
+
+  &.is-closed {
+    background: #f1f5f9;
+  }
+}
+
+.cell-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-num {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.sale-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+
+  &.open {
+    background: #10b981;
+  }
+
+  &.closed {
+    background: #94a3b8;
+  }
+}
+
+.cell-price {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+
+  .currency {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+}
+
+.cell-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.mini-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.badge-base {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.badge-ovr {
+  background: #000000;
+  color: #00ffff;
+}
+
+.badge-cta {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-ctd {
+  background: #fef3c7;
+  color: #b45309;
+}
