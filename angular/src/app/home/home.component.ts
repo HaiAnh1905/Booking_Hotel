@@ -49,61 +49,30 @@ export class HomeComponent {
     rooms: 1,
   };
 
-  // Danh mục phòng mẫu chuẩn concept
-  featuredRooms = signal<SampleRoom[]>([
-    {
-      id: 'room-deluxe-01',
-      name: 'Deluxe Ocean View',
-      nameKey: 'Deluxe Ocean View',
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-      price: 1850000,
-      capacity: 2,
-      rating: 4.9,
-      badgeKey: 'RoomRack:Available',
-    },
-    {
-      id: 'room-suite-02',
-      name: 'Royal Executive Suite',
-      nameKey: 'Royal Executive Suite',
-      image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80',
-      price: 3600000,
-      capacity: 4,
-      rating: 5.0,
-      badgeKey: 'RoomRack:Available',
-    },
-    {
-      id: 'room-villa-03',
-      name: 'Family Garden Villa',
-      nameKey: 'Family Garden Villa',
-      image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80',
-      price: 2750000,
-      capacity: 5,
-      rating: 4.8,
-      badgeKey: 'RoomRack:Available',
-    },
-  ]);
+  // Danh mục phòng nổi bật (tải từ dữ liệu thực khi tích hợp API công khai)
+  featuredRooms = signal<SampleRoom[]>([]);
 
   // Tiện ích nổi bật
   amenities: AmenityItem[] = [
     {
       icon: 'fa-solid fa-bell-concierge',
-      titleKey: 'Landing:AmenityRoomService',
-      descKey: 'Landing:AmenityRoomServiceDesc',
+      titleKey: '::Landing:AmenityRoomService',
+      descKey: '::Landing:AmenityRoomServiceDesc',
     },
     {
       icon: 'fa-solid fa-water-ladder',
-      titleKey: 'Landing:AmenityInfinityPool',
-      descKey: 'Landing:AmenityInfinityPoolDesc',
+      titleKey: '::Landing:AmenityInfinityPool',
+      descKey: '::Landing:AmenityInfinityPoolDesc',
     },
     {
       icon: 'fa-solid fa-utensils',
-      titleKey: 'Landing:AmenityFineDining',
-      descKey: 'Landing:AmenityFineDiningDesc',
+      titleKey: '::Landing:AmenityFineDining',
+      descKey: '::Landing:AmenityFineDiningDesc',
     },
     {
       icon: 'fa-solid fa-van-shuttle',
-      titleKey: 'Landing:AmenityAirportShuttle',
-      descKey: 'Landing:AmenityAirportShuttleDesc',
+      titleKey: '::Landing:AmenityAirportShuttle',
+      descKey: '::Landing:AmenityAirportShuttleDesc',
     },
   ];
 

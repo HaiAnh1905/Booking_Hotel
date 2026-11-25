@@ -1,0 +1,193 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="modalConfig"
+  (cancel)="onClose()"
+  (confirm)="onClose()"
+>
+  <div class="audit-filters row g-2 align-items-end mb-3">
+    <div class="col-md-3">
+      <label class="form-label small mb-1">{{ 'Manager:Rates:AuditFilterPlan' | abpLocalization }}</label>
+      <bh-searchable-select
+        class="audit-filter-select"
+        [ngModel]="selectedRatePlanId()"
+        (ngModelChange)="selectedRatePlanId.set($event ?? '')"
+        [options]="ratePlanFilterOptions"
+        [searchable]="ratePlans.length > 5"
+        [clearable]="false"
+      ></bh-searchable-select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label small mb-1">{{ 'Manager:Rates:AuditFilterAction' | abpLocalization }}</label>
+      <bh-searchable-select
+        class="audit-filter-select"
+        [ngModel]="selectedActionType()"
+        (ngModelChange)="selectedActionType.set($event ?? '')"
+        [options]="actionTypeFilterOptions"
+        [searchable]="false"
+        [clearable]="false"
+      ></bh-searchable-select>
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label small mb-1">{{ 'Common:FromDate' | abpLocalization }}</label>
+      <input
+        type="date"
+        class="form-control audit-date-input"
+        [ngModel]="fromDate()"
+        (ngModelChange)="fromDate.set($event)"
+      />
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label small mb-1">{{ 'Common:ToDate' | abpLocalization }}</label>
+      <input
+        type="date"
+        class="form-control audit-date-input"
+        [ngModel]="toDate()"
+        (ngModelChange)="toDate.set($event)"
+      />
+    </div>
+
+    <div class="col-md-2">
+      <button type="button" class="btn btn-dark text-info w-100 fw-semibold audit-apply-btn" (click)="onFilterApply()">
+        <i class="fa-solid fa-filter me-1"></i>
+        {{ 'Common:ApplyFilter' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="py-5 text-center text-muted">
+      <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+      <p class="small mb-0">{{ 'Common:Loading' | abpLocalization }}</p>
+    </div>
+  } @else if (logs().length === 0) {
+    <bh-empty-state
+      iconClass="fa-solid fa-clock-rotate-left"
+      titleKey="Manager:Rates:AuditEmptyTitle"
+      descriptionKey="Manager:Rates:AuditEmptyDesc"
+    ></bh-empty-state>
+  } @else {
+    <div class="table-responsive audit-table-shell">
+      <table class="table table-hover align-middle mb-0 audit-table">
+        <thead>
+          <tr>
+            <th class="col-actor-time">{{ 'Manager:Rates:AuditColActorTime' | abpLocalization }}</th>
+            <th class="col-scope">{{ 'Manager:Rates:AuditColTarget' | abpLocalization }}</th>
+            <th class="text-center col-action">{{ 'Manager:Rates:AuditColAction' | abpLocalization }}</th>
+            <th class="col-diff">{{ 'Manager:Rates:AuditColBefore' | abpLocalization }}</th>
+            <th class="col-diff">{{ 'Manager:Rates:AuditColAfter' | abpLocalization }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of logs(); track log.id) {
+            <tr>
+              <td class="col-actor-time">
+                <div class="audit-time">{{ log.actionTime | date: 'dd/MM/yyyy HH:mm' }}</div>
+                <div class="audit-actor">
+                  <i class="fa-regular fa-user me-1"></i>{{ log.actorName }}
+                </div>
+              </td>
+
+              <td class="col-scope">
+                <div class="scope-room">{{ log.roomTypeName }}</div>
+                <div class="scope-plan">
+                  <span class="scope-code">{{ log.ratePlanCode }}</span>
+                  <span class="scope-plan-name" [title]="log.ratePlanName">{{ log.ratePlanName }}</span>
+                </div>
+                @if (log.affectedStartDate && log.affectedEndDate) {
+                  <div class="scope-dates">
+                    <i class="fa-regular fa-calendar me-1"></i>
+                    @if (isSingleAffectedDate(log)) {
+                      {{ log.affectedStartDate | date: 'dd/MM/yyyy' }}
+                    } @else {
+                      {{ log.affectedStartDate | date: 'dd/MM/yyyy' }} → {{ log.affectedEndDate | date: 'dd/MM/yyyy' }}
+                    }
+                  </div>
+                }
+              </td>
+
+              <td class="text-center col-action">
+                <span class="action-pill" [ngClass]="getActionBadgeClass(log.actionType)">
+                  {{ ('Manager:Rates:AuditAction_' + log.actionType) | abpLocalization }}
+                </span>
+              </td>
+
+              <td class="col-diff">
+                @if (parseAuditSummary(log.beforeValueJson); as before) {
+                  <div class="diff-box diff-before">
+                    @if (before.statusVariant === 'active' || before.statusVariant === 'inactive') {
+                      <span class="mini-status" [class.active]="before.statusVariant === 'active'" [class.inactive]="before.statusVariant === 'inactive'">
+                        {{ before.primaryText }}
+                      </span>
+                    } @else {
+                      <div class="diff-primary">{{ before.primaryText }}</div>
+                    }
+                    @if (before.secondaryText) {
+                      <div class="diff-secondary">{{ before.secondaryText }}</div>
+                    }
+                    @if (before.hasCta || before.hasCtd) {
+                      <div class="diff-flags">
+                        @if (before.hasCta) {
+                          <span class="flag-badge flag-cta">CTA</span>
+                        }
+                        @if (before.hasCtd) {
+                          <span class="flag-badge flag-ctd">CTD</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </td>
+
+              <td class="col-diff">
+                @if (parseAuditSummary(log.afterValueJson); as after) {
+                  <div class="diff-box diff-after">
+                    @if (after.statusVariant === 'active' || after.statusVariant === 'inactive') {
+                      <span class="mini-status" [class.active]="after.statusVariant === 'active'" [class.inactive]="after.statusVariant === 'inactive'">
+                        {{ after.primaryText }}
+                      </span>
+                    } @else {
+                      <div class="diff-primary" [class.highlight]="after.statusVariant === 'override'">
+                        {{ after.primaryText }}
+                      </div>
+                    }
+                    @if (after.secondaryText) {
+                      <div class="diff-secondary">{{ after.secondaryText }}</div>
+                    }
+                    @if (after.hasCta || after.hasCtd) {
+                      <div class="diff-flags">
+                        @if (after.hasCta) {
+                          <span class="flag-badge flag-cta">CTA</span>
+                        }
+                        @if (after.hasCtd) {
+                          <span class="flag-badge flag-ctd">CTD</span>
+                        }
+                      </div>
+                    } @else if (after.showNoRestrictions) {
+                      <div class="diff-secondary">{{ 'Manager:Rates:AuditNoRestrictions' | abpLocalization }}</div>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <span class="small text-muted">{{ 'Common:Total' | abpLocalization }}: <strong>{{ totalCount() }}</strong></span>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary" disabled>{{ page() }} / {{ totalPages }}</button>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="page() >= totalPages" (click)="goToPage(page() + 1)">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  }
+</bh-modal>

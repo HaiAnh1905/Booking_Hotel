@@ -38,3 +38,4 @@ export class BhStatusBadgeComponent {
   @Input() iconClass: string = '';
   @Input() isDot: boolean = false;
 }
+

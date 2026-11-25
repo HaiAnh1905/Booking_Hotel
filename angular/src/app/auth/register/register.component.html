@@ -10,7 +10,7 @@
       </ng-container>
       <ng-template #defaultRegisterHeader>
         <h2>{{ '::Auth:Register' | abpLocalization }}</h2>
-        <p class="subtitle">Đăng ký thành viên trong 3 bước nhanh chóng</p>
+        <p class="subtitle">{{ 'Auth:RegisterSubtitle' | abpLocalization }}</p>
       </ng-template>
     </div>
 
@@ -18,7 +18,7 @@
     <div class="steps-progress" *ngIf="currentStep < 4">
       <div class="step-item" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
         <div class="step-circle">{{ currentStep > 1 && isGoogleOnboarding ? '✓' : '1' }}</div>
-        <div class="step-label">{{ (isGoogleOnboarding ? '::Auth:GoogleStep1Label' : 'Tài khoản') | abpLocalization }}</div>
+        <div class="step-label">{{ (isGoogleOnboarding ? '::Auth:GoogleStep1Label' : 'Auth:AccountStepLabel') | abpLocalization }}</div>
       </div>
       <div class="step-line" [class.completed]="currentStep > 1"></div>
       <div class="step-item" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
@@ -38,33 +38,39 @@
 
     <!-- BƯỚC 1: EMAIL & PASSWORD -->
     <div *ngIf="currentStep === 1">
-      <form [formGroup]="step1Form" (ngSubmit)="onStep1Submit()" class="auth-form">
+      <form [formGroup]="step1Form" (ngSubmit)="onStep1Submit()" class="auth-form" autocomplete="off">
+        <!-- Bẫy vô hiệu hóa tính năng tự động điền (autofill) của Chrome / Edge -->
+        <input type="text" name="fake_username_trap" style="position: absolute; opacity: 0; height: 0; width: 0; z-index: -1;" tabindex="-1" autocomplete="off" />
+        <input type="password" name="fake_password_trap" style="position: absolute; opacity: 0; height: 0; width: 0; z-index: -1;" tabindex="-1" autocomplete="new-password" />
+
         <div class="form-group">
-          <label for="reg-email">{{ '::Auth:Email' | abpLocalization }}</label>
+          <label for="reg-email">{{ '::Auth:Email' | abpLocalization }} <span class="text-danger">*</span></label>
           <input
             id="reg-email"
             type="email"
             formControlName="email"
             class="form-control"
+            autocomplete="off"
             [class.is-invalid]="(step1Form.get('email')?.dirty || step1Form.get('email')?.touched) && step1Form.get('email')?.invalid"
             [class.is-valid]="(step1Form.get('email')?.dirty || step1Form.get('email')?.touched) && !step1Form.get('email')?.invalid"
             placeholder="example@hotel.com"
           />
           <div *ngIf="(step1Form.get('email')?.dirty || step1Form.get('email')?.touched) && step1Form.get('email')?.invalid" class="invalid-feedback">
-            Vui lòng nhập email hợp lệ.
+            {{ 'Auth:EmailInvalid' | abpLocalization }}
           </div>
         </div>
 
         <div class="form-group">
-          <label for="reg-password">{{ '::Auth:Password' | abpLocalization }}</label>
+          <label for="reg-password">{{ '::Auth:Password' | abpLocalization }} <span class="text-danger">*</span></label>
           <input
             id="reg-password"
             type="password"
             formControlName="password"
             class="form-control"
+            autocomplete="new-password"
             [class.is-valid]="step1Form.get('password')?.value && !step1Form.get('password')?.invalid"
             [class.is-invalid]="step1Form.get('password')?.invalid && (step1Form.get('password')?.dirty || step1Form.get('password')?.touched)"
-            placeholder="Tối thiểu 8 ký tự, 1 hoa, 1 số, 1 ký tự đặc biệt"
+            placeholder="••••••••"
           />
           <!-- Checklist độ phức tạp mật khẩu thời gian thực -->
           <div class="password-checklist" *ngIf="step1Form.get('password')?.dirty || step1Form.get('password')?.touched">
@@ -92,27 +98,28 @@
         </div>
 
         <div class="form-group">
-          <label for="reg-confirm">{{ '::Auth:ConfirmPassword' | abpLocalization }}</label>
+          <label for="reg-confirm">{{ '::Auth:ConfirmPassword' | abpLocalization }} <span class="text-danger">*</span></label>
           <input
             id="reg-confirm"
             type="password"
             formControlName="confirmPassword"
             class="form-control"
+            autocomplete="new-password"
             [class.is-invalid]="step1Form.hasError('passwordMismatch') && (step1Form.get('confirmPassword')?.dirty || step1Form.get('confirmPassword')?.touched)"
             [class.is-valid]="step1Form.get('confirmPassword')?.value && !step1Form.hasError('passwordMismatch') && !step1Form.get('password')?.invalid"
-            placeholder="Nhập lại mật khẩu"
+            placeholder="••••••••"
           />
           <div *ngIf="step1Form.hasError('passwordMismatch') && (step1Form.get('confirmPassword')?.dirty || step1Form.get('confirmPassword')?.touched)" class="invalid-feedback">
-            Mật khẩu xác nhận không trùng khớp.
+            {{ 'Auth:PasswordMismatchError' | abpLocalization }}
           </div>
           <div *ngIf="step1Form.get('confirmPassword')?.value && !step1Form.hasError('passwordMismatch') && !step1Form.get('password')?.invalid" class="valid-feedback">
-            ✓ Mật khẩu xác nhận trùng khớp.
+            {{ 'Auth:PasswordMatchSuccess' | abpLocalization }}
           </div>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" [disabled]="step1Form.invalid || isLoading">
           <span *ngIf="isLoading" class="spinner"></span>
-          {{ '::Auth:Continue' | abpLocalization }} (Bước 2)
+          {{ 'Auth:ContinueStep2' | abpLocalization }}
         </button>
       </form>
 
@@ -144,26 +151,49 @@
         {{ '::Auth:GoogleAccountBadge' | abpLocalization }} <strong>{{ registeredEmail }}</strong>
       </div>
       <div class="user-badge" *ngIf="!isGoogleOnboarding">
-        Đang đăng ký cho: <strong>{{ registeredEmail }}</strong>
+        {{ 'Auth:RegisteringFor' | abpLocalization }} <strong>{{ registeredEmail }}</strong>
       </div>
       <form [formGroup]="step2Form" (ngSubmit)="onStep2Submit()" class="auth-form">
         <div class="form-group">
-          <label for="fullName">{{ '::Auth:FullName' | abpLocalization }}</label>
+          <label for="fullName">{{ '::Auth:FullName' | abpLocalization }} <span class="text-danger">*</span></label>
           <input
             id="fullName"
             type="text"
             formControlName="fullName"
             class="form-control"
-            placeholder="Ví dụ: Nguyễn Văn A"
+            placeholder="Nguyen Van A"
           />
           <div *ngIf="step2Form.get('fullName')?.touched && step2Form.get('fullName')?.invalid" class="invalid-feedback">
-            Họ và tên phải có ít nhất 2 ký tự.
+            {{ 'Auth:FullNameMinLength' | abpLocalization }}
           </div>
+        </div>
+
+        <!-- Tên đăng nhập (Tự động tạo từ Họ và tên) -->
+        <div class="form-group mt-3">
+          <label for="reg-username">{{ 'Auth:SystemUserNameLabel' | abpLocalization }} <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted fw-bold">@</span>
+            <input
+              id="reg-username"
+              type="text"
+              formControlName="userName"
+              class="form-control"
+              (input)="isUserNameManuallyEdited = true"
+              [class.is-invalid]="step2Form.get('userName')?.touched && step2Form.get('userName')?.invalid"
+              placeholder="nguyenvana"
+            />
+          </div>
+          <div *ngIf="step2Form.get('userName')?.touched && step2Form.get('userName')?.invalid" class="invalid-feedback d-block">
+            {{ 'Auth:SystemUserNameError' | abpLocalization }}
+          </div>
+          <small class="form-text text-muted mt-1 d-block">
+            {{ 'Auth:SystemUserNameHelp' | abpLocalization }}
+          </small>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" [disabled]="step2Form.invalid || isLoading">
           <span *ngIf="isLoading" class="spinner"></span>
-          {{ '::Auth:Continue' | abpLocalization }} (Bước 3)
+          {{ 'Auth:ContinueStep3' | abpLocalization }}
         </button>
       </form>
     </div>
@@ -171,11 +201,11 @@
     <!-- BƯỚC 3: SỐ ĐIỆN THOẠI -->
     <div *ngIf="currentStep === 3">
       <div class="user-badge">
-        Khách hàng: <strong>{{ step2Form.get('fullName')?.value }}</strong> ({{ registeredEmail }})
+        {{ 'Auth:CustomerBadge' | abpLocalization }} <strong>{{ step2Form.get('fullName')?.value }}</strong> (@{{ step2Form.get('userName')?.value }})
       </div>
       <form [formGroup]="step3Form" (ngSubmit)="onStep3Submit()" class="auth-form">
         <div class="form-group">
-          <label for="phoneNumber">{{ '::Auth:PhoneNumber' | abpLocalization }}</label>
+          <label for="phoneNumber">{{ '::Auth:PhoneNumber' | abpLocalization }} <span class="text-danger">*</span></label>
           <input
             id="phoneNumber"
             type="tel"
@@ -184,7 +214,7 @@
             placeholder="0912345678"
           />
           <div *ngIf="step3Form.get('phoneNumber')?.touched && step3Form.get('phoneNumber')?.invalid" class="invalid-feedback">
-            Vui lòng nhập số điện thoại Việt Nam hợp lệ (10 chữ số).
+            {{ 'Auth:PhoneInvalid' | abpLocalization }}
           </div>
         </div>
 
@@ -200,7 +230,7 @@
       <div class="success-icon">🎉</div>
       <h3>{{ '::Auth:RegistrationSuccessTitle' | abpLocalization }}</h3>
       <p>{{ '::Auth:RegistrationSuccessMessage' | abpLocalization: (step2Form.get('fullName')?.value || '') }}</p>
-      <p class="subtitle-msg" *ngIf="isGoogleOnboarding">Tài khoản của bạn đã được kích hoạt thành công!</p>
+      <p class="subtitle-msg" *ngIf="isGoogleOnboarding">{{ '::Auth:GoogleAccountBadge' | abpLocalization }}</p>
       <p class="subtitle-msg" *ngIf="!isGoogleOnboarding">{{ '::Auth:PleaseLoginToContinue' | abpLocalization }}</p>
       <a *ngIf="isGoogleOnboarding" routerLink="/" class="btn btn-primary btn-block">
         {{ '::Auth:GoToHomePage' | abpLocalization }}
@@ -211,9 +241,8 @@
     </div>
 
     <div class="auth-footer" *ngIf="currentStep < 4">
-      <span>Đã có tài khoản? </span>
+      <span>{{ 'Auth:AlreadyHaveAccountPrompt' | abpLocalization }} </span>
       <a routerLink="/auth/login" class="register-link">{{ '::Auth:Login' | abpLocalization }}</a>
     </div>
   </div>
 </div>
-

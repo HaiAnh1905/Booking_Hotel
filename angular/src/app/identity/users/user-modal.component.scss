@@ -1,0 +1,169 @@
+.user-form {
+  color: #1e293b;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.35rem;
+
+  .required {
+    color: #ef4444;
+  }
+}
+
+.form-control, .form-select {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:focus {
+    background-color: #ffffff;
+    border-color: #7c3aed;
+    color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  }
+
+  &:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  &.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  }
+}
+
+.invalid-feedback {
+  font-size: 0.775rem;
+  color: #ef4444;
+  margin-top: 0.25rem;
+}
+
+.password-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+
+  .criterion {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.775rem;
+    color: #64748b;
+
+    i {
+      font-size: 0.75rem;
+    }
+
+    &.passed {
+      color: #059669;
+      font-weight: 600;
+    }
+  }
+}
+
+.roles-wrapper {
+  margin-top: 0.25rem;
+
+  .role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.9rem;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+
+    &:hover {
+      border-color: #94a3b8;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    &.active {
+      background: #f3e8ff;
+      border-color: #7c3aed;
+      color: #6d28d9;
+      font-weight: 600;
+    }
+  }
+}
+
+.hotel-assignments-wrapper {
+  margin-top: 0.25rem;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem;
+  background-color: #f8fafc;
+
+  .hotel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.75rem;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+
+    &:hover {
+      background-color: #ffffff;
+    }
+
+    .form-check {
+      margin-bottom: 0;
+
+      .form-check-input {
+        cursor: pointer;
+      }
+
+      .form-check-label {
+        font-size: 0.85rem;
+        color: #1e293b;
+        cursor: pointer;
+        font-weight: 500;
+      }
+    }
+
+    .primary-badge-btn {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px dashed #cbd5e1;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+
+      &.is-primary {
+        background-color: #fef3c7;
+        border-color: #f59e0b;
+        color: #b45309;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+:host ::ng-deep .confirm-manager-modal-wrapper .bh-modal-backdrop {
+  z-index: 1070 !important;
+}

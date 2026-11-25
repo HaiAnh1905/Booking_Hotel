@@ -117,3 +117,4 @@ export interface SearchRoomCriteria {
   children: number;
   rooms: number;
 }
+

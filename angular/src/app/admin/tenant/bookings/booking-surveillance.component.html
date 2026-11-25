@@ -1,0 +1,154 @@
+<div class="surveillance-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">{{ 'TenantBookings:Title' | abpLocalization }}</h2>
+      <p class="page-subtitle">{{ 'TenantBookings:Subtitle' | abpLocalization }}</p>
+    </div>
+    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-6">
+      <i class="fa-solid fa-lock me-1"></i> {{ 'Common:ReadOnly' | abpLocalization }}
+    </span>
+  </div>
+
+  <!-- Read-Only Notice Alert -->
+  <div class="alert alert-info d-flex align-items-center mb-4">
+    <i class="fa-solid fa-circle-info fa-lg me-3 text-info"></i>
+    <div>
+      {{ 'TenantBookings:ReadOnlyNotice' | abpLocalization }}
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        class="form-control search-input"
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="onFilterChange()"
+        [placeholder]="'TenantBookings:SearchPlaceholder' | abpLocalization"
+      />
+    </div>
+
+    <div class="hotel-filter">
+      <select class="form-select" [(ngModel)]="selectedHotelId" (change)="onFilterChange()">
+        <option value="">{{ 'TenantBookings:FilterHotel' | abpLocalization }}</option>
+        <option *ngFor="let h of hotels" [value]="h.id">{{ h.code }} - {{ h.name }}</option>
+      </select>
+    </div>
+
+    <div class="status-filter">
+      <select class="form-select" [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+        <option value="">{{ 'TenantBookings:FilterStatus' | abpLocalization }}</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="CheckedIn">CheckedIn</option>
+        <option value="Completed">Completed</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <div class="payment-filter">
+      <select class="form-select" [(ngModel)]="selectedPaymentStatus" (change)="onFilterChange()">
+        <option value="">{{ 'TenantBookings:PaymentAll' | abpLocalization }}</option>
+        <option value="FullyPaid">{{ 'TenantBookings:PaymentFullyPaid' | abpLocalization }}</option>
+        <option value="PartiallyPaid">{{ 'TenantBookings:PaymentPartiallyPaid' | abpLocalization }}</option>
+        <option value="Unpaid">{{ 'TenantBookings:PaymentUnpaid' | abpLocalization }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="surveillance-table">
+        <thead>
+          <tr>
+            <th>{{ 'TenantBookings:ColBookingCode' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColHotel' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColCustomer' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColDates' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColRoomInfo' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColTotalAmount' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColPaymentStatus' | abpLocalization }}</th>
+            <th>{{ 'TenantBookings:ColStatus' | abpLocalization }}</th>
+            <th class="text-end">{{ 'TenantBookings:ViewDetail' | abpLocalization }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading -->
+          <tr *ngIf="isLoading">
+            <td colspan="9" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">{{ 'Common:Loading' | abpLocalization }}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data -->
+          <ng-container *ngIf="!isLoading">
+            <tr *ngFor="let b of bookings">
+              <td>
+                <span class="booking-code-badge">{{ b.bookingCode }}</span>
+              </td>
+              <td>
+                <div class="fw-semibold text-dark">{{ b.hotelName }}</div>
+                <div class="small text-muted">{{ b.hotelCode }}</div>
+              </td>
+              <td>
+                <div class="fw-semibold text-dark">{{ b.customerName }}</div>
+                <div class="small text-muted">{{ b.customerPhone }}</div>
+              </td>
+              <td class="text-nowrap">
+                <div class="small fw-semibold">{{ b.checkInDate | date:'dd/MM/yyyy' }}</div>
+                <div class="small text-muted">{{ b.checkOutDate | date:'dd/MM/yyyy' }}</div>
+              </td>
+              <td>
+                <div>{{ b.roomTypeName }}</div>
+                <div *ngIf="b.roomNumber" class="small text-muted">{{ 'TenantBookings:RoomNumber' | abpLocalization }}: {{ b.roomNumber }}</div>
+              </td>
+              <td class="text-nowrap fw-bold text-success">
+                {{ b.totalAmount | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+              </td>
+              <td class="text-nowrap">
+                <span class="status-pill badge-primary">
+                  {{ b.paymentStatus }}
+                </span>
+              </td>
+              <td class="text-nowrap">
+                <span class="status-pill badge-success">
+                  {{ b.status }}
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="openDetail(b)"
+                  [title]="'TenantBookings:ViewDetail' | abpLocalization"
+                >
+                  <i class="fa-solid fa-eye me-1"></i> {{ 'TenantBookings:ViewDetail' | abpLocalization }}
+                </button>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="bookings.length === 0">
+              <td colspan="9" class="empty-state-cell py-5 text-center">
+                <i class="fa-solid fa-calendar-xmark fa-2x text-muted mb-2 opacity-50 d-block"></i>
+                <p class="text-muted mb-0">{{ 'Common:NoData' | abpLocalization }}</p>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xem Chi Tiết Giám Sát -->
+<bh-booking-detail-modal
+  [isOpen]="isDetailModalOpen"
+  [booking]="selectedBookingForDetail"
+  (close)="isDetailModalOpen = false"
+></bh-booking-detail-modal>

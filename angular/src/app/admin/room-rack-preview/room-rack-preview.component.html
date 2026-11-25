@@ -87,7 +87,7 @@
       </div>
 
       <!-- Floor Filters -->
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2" *ngIf="floors().length > 0">
         <span class="small fw-bold text-muted">{{ 'Admin:FilterByFloor' | abpLocalization }}:</span>
         <div class="btn-group btn-group-sm">
           <button
@@ -98,35 +98,30 @@
           >
             {{ 'Admin:AllFloors' | abpLocalization }}
           </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            [class.active]="selectedFloor() === 1"
-            (click)="setFloorFilter(1)"
-          >
-            {{ 'RoomRack:Floor' | abpLocalization }} 1
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            [class.active]="selectedFloor() === 2"
-            (click)="setFloorFilter(2)"
-          >
-            {{ 'RoomRack:Floor' | abpLocalization }} 2
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            [class.active]="selectedFloor() === 3"
-            (click)="setFloorFilter(3)"
-          >
-            {{ 'RoomRack:Floor' | abpLocalization }} 3
-          </button>
+          @for (floor of floors(); track floor) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [class.active]="selectedFloor() === floor"
+              (click)="setFloorFilter(floor)"
+            >
+              {{ 'RoomRack:Floor' | abpLocalization }} {{ floor }}
+            </button>
+          }
         </div>
       </div>
     </div>
   </div>
 
+  @if (isLoading()) {
+    <bh-loading-spinner></bh-loading-spinner>
+  } @else if (filteredRooms().length === 0) {
+    <bh-empty-state
+      iconClass="fa-solid fa-bed"
+      titleKey="RoomRack:EmptyTitle"
+      descriptionKey="RoomRack:EmptyDesc"
+    ></bh-empty-state>
+  } @else {
   <!-- Room Grid Matrix -->
   <div class="row g-3">
     @for (room of filteredRooms(); track room.roomId) {
@@ -176,16 +171,6 @@
 
           <!-- Card Footer: Quick Actions -->
           <div class="card-footer p-2 bg-light border-top d-flex gap-2 justify-content-end">
-            @if (room.status === 'Available') {
-              <button
-                type="button"
-                class="btn btn-sm btn-bh-frontdesk flex-grow-1"
-                (click)="quickCheckIn(room)"
-              >
-                <i class="fa-solid fa-key me-1"></i>
-                {{ 'RoomRack:QuickCheckIn' | abpLocalization }}
-              </button>
-            }
             @if (room.status === 'Dirty') {
               <button
                 type="button"
@@ -193,17 +178,7 @@
                 (click)="toggleHousekeeping(room)"
               >
                 <i class="fa-solid fa-broom me-1"></i>
-                Đã dọn xong (Sạch)
-              </button>
-            }
-            @if (room.status === 'Occupied') {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-dark flex-grow-1"
-                (click)="toggleHousekeeping(room)"
-              >
-                <i class="fa-solid fa-broom me-1"></i>
-                Yêu cầu dọn phòng
+                {{ 'RoomRack:QuickClean' | abpLocalization }}
               </button>
             }
           </div>
@@ -211,4 +186,6 @@
       </div>
     }
   </div>
+  }
 </div>
+

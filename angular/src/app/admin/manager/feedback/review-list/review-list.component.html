@@ -1,0 +1,209 @@
+<div class="feedback-page-container">
+  <!-- Page Header & Tab Navigation -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h2 class="page-title m-0">{{ 'Manager:Feedback' | abpLocalization }}</h2>
+      <p class="text-muted m-0">{{ propertyService.currentHotel()?.name }}</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="btn-group role-tab-group" role="group">
+      <button type="button" class="btn btn-primary active">
+        <i class="fa-solid fa-star me-1"></i>
+        {{ 'Manager:Feedback:ReviewsTab' | abpLocalization }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="navigateToComplaints()">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+        {{ 'Manager:Feedback:ComplaintsTab' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Row -->
+  <div class="card mb-4 filter-card">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted fw-semibold">
+          <i class="fa-solid fa-filter me-1"></i>
+          {{ 'Common:Filter' | abpLocalization }}:
+        </span>
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn" [ngClass]="minScoreFilter() === undefined ? 'btn-secondary' : 'btn-outline-secondary'" (click)="onFilterChange(undefined)">
+            {{ 'Manager:Feedback:FilterAll' | abpLocalization }}
+          </button>
+          <button type="button" class="btn" [ngClass]="minScoreFilter() === 5 ? 'btn-secondary' : 'btn-outline-secondary'" (click)="onFilterChange(5)">
+            {{ 'Manager:Feedback:Filter5Star' | abpLocalization }}
+          </button>
+          <button type="button" class="btn" [ngClass]="minScoreFilter() === 4 ? 'btn-secondary' : 'btn-outline-secondary'" (click)="onFilterChange(4)">
+            {{ 'Manager:Feedback:Filter4Star' | abpLocalization }}
+          </button>
+          <button type="button" class="btn" [ngClass]="minScoreFilter() === 3 ? 'btn-secondary' : 'btn-outline-secondary'" (click)="onFilterChange(3)">
+            {{ 'Manager:Feedback:Filter3Star' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+
+      <div class="text-muted small">
+        {{ 'Common:Total' | abpLocalization }}: <strong>{{ reviews().length }}</strong> {{ 'Manager:Feedback:ReviewsTab' | abpLocalization | lowercase }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert alert-danger mb-4">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    {{ errorMessage() }}
+  </div>
+
+  <!-- Reviews List -->
+  <div *ngIf="!isLoading()" class="reviews-list d-flex flex-column gap-3">
+    <div *ngIf="reviews().length === 0" class="card empty-card text-center py-5">
+      <i class="fa-regular fa-comment-dots fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">{{ 'Common:NoData' | abpLocalization }}</h5>
+    </div>
+
+    <div *ngFor="let review of reviews()" class="card review-card shadow-sm">
+      <div class="card-body">
+        <!-- Review Header -->
+        <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="card-title m-0 fw-bold">{{ review.guestFullName }}</h5>
+              <span class="badge bg-light text-dark border">
+                <i class="fa-solid fa-receipt me-1 text-muted"></i>
+                {{ review.bookingCode }}
+              </span>
+            </div>
+            <div class="text-muted small mt-1">
+              <i class="fa-regular fa-clock me-1"></i>
+              {{ review.creationTime | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+
+          <!-- Overall Score Badge -->
+          <div class="score-badge d-flex align-items-center gap-1 px-3 py-2 rounded">
+            <span class="score-number fw-bold fs-5">{{ review.overallScore | number:'1.1-1' }}</span>
+            <div class="stars-container text-warning">
+              <i *ngFor="let star of getStarArray(5)" class="fa-star" [ngClass]="star <= review.overallScore ? 'fa-solid' : 'fa-regular'"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Criteria Breakdown -->
+        <div class="criteria-row row g-2 mb-3 py-2 px-3 bg-light rounded">
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">{{ 'Manager:Feedback:Cleanliness' | abpLocalization }}</div>
+            <div class="fw-semibold text-primary">
+              <i class="fa-solid fa-broom me-1 text-muted"></i>{{ review.cleanlinessScore }}/5
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">{{ 'Manager:Feedback:Staff' | abpLocalization }}</div>
+            <div class="fw-semibold text-primary">
+              <i class="fa-solid fa-user-tie me-1 text-muted"></i>{{ review.staffScore }}/5
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">{{ 'Manager:Feedback:Amenities' | abpLocalization }}</div>
+            <div class="fw-semibold text-primary">
+              <i class="fa-solid fa-tv me-1 text-muted"></i>{{ review.amenitiesScore }}/5
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">{{ 'Manager:Feedback:Location' | abpLocalization }}</div>
+            <div class="fw-semibold text-primary">
+              <i class="fa-solid fa-location-dot me-1 text-muted"></i>{{ review.locationScore }}/5
+            </div>
+          </div>
+        </div>
+
+        <!-- Guest Comment -->
+        <p class="card-text guest-comment mb-3">
+          "{{ review.comment }}"
+        </p>
+
+        <!-- Official Reply Section -->
+        <div *ngIf="review.officialReply" class="official-reply-box p-3 rounded mb-3 border-start border-4 border-success bg-light">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong class="text-success small">
+              <i class="fa-solid fa-reply me-1"></i>
+              {{ 'Manager:Feedback:OfficialReply' | abpLocalization }}
+            </strong>
+            <span class="text-muted small">
+              {{ review.repliedByName }} &bull; {{ review.repliedAt | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+          <p class="m-0 text-secondary">{{ review.officialReply }}</p>
+        </div>
+
+        <!-- Action Row -->
+        <div class="d-flex justify-content-end">
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="openReplyModal(review)">
+            <i class="fa-solid fa-reply me-1"></i>
+            {{ (review.officialReply ? 'Common:Edit' : 'Manager:Feedback:ReplyButton') | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Đăng Phản Hồi Chính Thức -->
+<div *ngIf="isReplyModalOpen()" class="modal-backdrop fade show"></div>
+<div *ngIf="isReplyModalOpen()" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa-solid fa-reply me-2 text-primary"></i>
+          {{ 'Manager:Feedback:ReplyModalTitle' | abpLocalization }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeReplyModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="selectedReview()" class="mb-3 p-3 bg-light rounded">
+          <div class="fw-bold">{{ selectedReview()?.guestFullName }} ({{ selectedReview()?.bookingCode }})</div>
+          <div class="text-muted fst-italic mt-1">"{{ selectedReview()?.comment }}"</div>
+        </div>
+
+        <form (ngSubmit)="submitReply()">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              {{ 'Manager:Feedback:ReplyContent' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <textarea
+              class="form-control"
+              rows="4"
+              [placeholder]="'Manager:Feedback:ReplyContent' | abpLocalization"
+              [ngModel]="replyContent()"
+              (ngModelChange)="replyContent.set($event)"
+              name="replyContent"
+              required>
+            </textarea>
+          </div>
+
+          <div *ngIf="errorMessage()" class="alert alert-danger py-2 small">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>{{ errorMessage() }}
+          </div>
+
+          <div class="modal-footer px-0 pb-0">
+            <button type="button" class="btn btn-secondary" (click)="closeReplyModal()">
+              {{ 'Common:Cancel' | abpLocalization }}
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting() || !replyContent().trim()">
+              <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
+              {{ 'Manager:Feedback:ReplyButton' | abpLocalization }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

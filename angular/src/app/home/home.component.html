@@ -7,10 +7,10 @@
           Booking Hotel Experience
         </span>
         <h1 class="display-4 fw-bold mb-3 hero-title">
-          {{ 'Landing:HeroTitle' | abpLocalization }}
+          {{ '::Landing:HeroTitle' | abpLocalization }}
         </h1>
         <p class="lead text-light opacity-90 mx-auto hero-subtitle">
-          {{ 'Landing:HeroSubtitle' | abpLocalization }}
+          {{ '::Landing:HeroSubtitle' | abpLocalization }}
         </p>
       </div>
 
@@ -21,13 +21,13 @@
           <div class="col-lg-3 col-md-6">
             <label class="form-label small fw-bold text-muted mb-1">
               <i class="fa-solid fa-hotel text-danger me-1"></i>
-              {{ 'Landing:DestinationLabel' | abpLocalization }}
+              {{ '::Landing:DestinationLabel' | abpLocalization }}
             </label>
             <div class="input-group">
               <input
                 type="text"
                 class="form-control"
-                [placeholder]="'Landing:DestinationPlaceholder' | abpLocalization"
+                [placeholder]="'::Landing:DestinationPlaceholder' | abpLocalization"
                 [(ngModel)]="searchCriteria.destinationOrHotelId"
                 name="destination"
               />
@@ -38,7 +38,7 @@
           <div class="col-lg-3 col-md-6 col-sm-6">
             <label class="form-label small fw-bold text-muted mb-1">
               <i class="fa-regular fa-calendar-check text-danger me-1"></i>
-              {{ 'Landing:CheckInDate' | abpLocalization }}
+              {{ '::Landing:CheckInDate' | abpLocalization }}
             </label>
             <input
               type="date"
@@ -52,7 +52,7 @@
           <div class="col-lg-3 col-md-6 col-sm-6">
             <label class="form-label small fw-bold text-muted mb-1">
               <i class="fa-regular fa-calendar-xmark text-danger me-1"></i>
-              {{ 'Landing:CheckOutDate' | abpLocalization }}
+              {{ '::Landing:CheckOutDate' | abpLocalization }}
             </label>
             <input
               type="date"
@@ -66,7 +66,7 @@
           <div class="col-lg-3 col-md-6">
             <button type="submit" class="btn btn-bh-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <span>{{ 'Landing:SearchButton' | abpLocalization }}</span>
+              <span>{{ '::Landing:SearchButton' | abpLocalization }}</span>
             </button>
           </div>
         </form>
@@ -78,7 +78,7 @@
   <section class="bh-amenities-section py-5 bg-white">
     <div class="container-fluid px-lg-5 py-4">
       <div class="text-center mb-5">
-        <h2 class="fw-bold mb-2 section-title">{{ 'Landing:AmenitiesTitle' | abpLocalization }}</h2>
+        <h2 class="fw-bold mb-2 section-title">{{ '::Landing:AmenitiesTitle' | abpLocalization }}</h2>
         <div class="title-divider mx-auto"></div>
       </div>
 
@@ -99,11 +99,12 @@
   </section>
 
   <!-- Featured Accommodations Section -->
+  @if (featuredRooms().length > 0) {
   <section class="bh-rooms-section py-5 bg-light">
     <div class="container-fluid px-lg-5 py-4">
       <div class="text-center mb-5">
-        <h2 class="fw-bold mb-2 section-title">{{ 'Landing:FeaturedRoomsTitle' | abpLocalization }}</h2>
-        <p class="text-muted">{{ 'Landing:FeaturedRoomsSubtitle' | abpLocalization }}</p>
+        <h2 class="fw-bold mb-2 section-title">{{ '::Landing:FeaturedRoomsTitle' | abpLocalization }}</h2>
+        <p class="text-muted">{{ '::Landing:FeaturedRoomsSubtitle' | abpLocalization }}</p>
         <div class="title-divider mx-auto"></div>
       </div>
 
@@ -126,16 +127,16 @@
                 </div>
                 <p class="text-muted small mb-3">
                   <i class="fa-solid fa-users me-1 text-secondary"></i>
-                  {{ 'Landing:GuestsCount' | abpLocalization: room.capacity }}
+                  {{ '::Landing:GuestsCount' | abpLocalization: (room.capacity.toString()) }}
                 </p>
 
                 <div class="mt-auto d-flex align-items-center justify-content-between pt-3 border-top">
                   <div>
                     <span class="fs-5 fw-bold text-danger">{{ room.price | number }}₫</span>
-                    <span class="text-muted small"> / {{ 'Landing:Night' | abpLocalization }}</span>
+                    <span class="text-muted small"> / {{ '::Landing:Night' | abpLocalization }}</span>
                   </div>
                   <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" (click)="onSearch()">
-                    {{ 'Landing:ViewDetails' | abpLocalization }}
+                    {{ '::Landing:ViewDetails' | abpLocalization }}
                   </button>
                 </div>
               </div>
@@ -145,4 +146,5 @@
       </div>
     </div>
   </section>
+  }
 </div>

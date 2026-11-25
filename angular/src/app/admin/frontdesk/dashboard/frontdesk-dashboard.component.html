@@ -1,0 +1,189 @@
+<div class="frontdesk-dashboard-page">
+  <div class="page-header-bar">
+    <div>
+      <h1 class="page-title">{{ 'Frontdesk:DashboardTitle' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Frontdesk:DashboardSubtitle' | abpLocalization }}</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn-refresh"
+        [disabled]="isLoading() || !propertyService.currentHotelId()"
+        (click)="loadOverview()">
+        <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+        {{ 'RoomRack:Refresh' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!propertyService.currentHotelId()" class="state-card">
+    <bh-empty-state
+      iconClass="fa-solid fa-hotel"
+      titleKey="Frontdesk:NoAssignedHotelTitle"
+      descriptionKey="Frontdesk:NoAssignedHotelDesc">
+    </bh-empty-state>
+  </div>
+
+  <div *ngIf="propertyService.currentHotelId() && isLoading()" class="state-card">
+    <bh-loading-spinner></bh-loading-spinner>
+  </div>
+
+  <ng-container *ngIf="propertyService.currentHotelId() && !isLoading() && overview() as data">
+    <!-- 4 KPI Cards -->
+    <div class="kpi-grid">
+      <button type="button" class="kpi-card kpi-total" (click)="goToReservations()">
+        <div class="kpi-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ 'Frontdesk:KpiTotalBookings' | abpLocalization }}</span>
+          <strong class="kpi-value">{{ data.totalActiveBookings }}</strong>
+          <span class="kpi-sub">{{ 'Frontdesk:KpiPendingCount' | abpLocalization: (data.pendingConfirmationCount + '') }}</span>
+        </div>
+      </button>
+
+      <button type="button" class="kpi-card kpi-arrivals" (click)="goToCheckIn()">
+        <div class="kpi-icon"><i class="fa-solid fa-plane-arrival"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ 'Frontdesk:KpiExpectedArrivals' | abpLocalization }}</span>
+          <strong class="kpi-value">{{ data.expectedArrivalsTodayCount }}</strong>
+        </div>
+      </button>
+
+      <button type="button" class="kpi-card kpi-inhouse" (click)="goToCheckOut()">
+        <div class="kpi-icon"><i class="fa-solid fa-bed"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ 'Frontdesk:KpiInHouse' | abpLocalization }}</span>
+          <strong class="kpi-value">{{ data.inHouseGuestsCount }}</strong>
+        </div>
+      </button>
+
+      <button type="button" class="kpi-card kpi-departures" (click)="goToCheckOut()">
+        <div class="kpi-icon"><i class="fa-solid fa-plane-departure"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ 'Frontdesk:KpiExpectedDepartures' | abpLocalization }}</span>
+          <strong class="kpi-value">{{ data.expectedDeparturesTodayCount }}</strong>
+        </div>
+      </button>
+    </div>
+
+    <!-- 3 Quick Operational Lists -->
+    <div class="lists-grid">
+      <!-- Expected Arrivals Today -->
+      <section class="panel-card">
+        <div class="panel-head">
+          <h2><i class="fa-solid fa-user-plus"></i> {{ 'Frontdesk:TodayArrivalsTitle' | abpLocalization }}</h2>
+          <button type="button" class="link-btn" (click)="goToCheckIn()">
+            {{ 'Frontdesk:ViewAll' | abpLocalization }} <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div *ngIf="data.todayArrivals.length === 0" class="panel-empty">
+          <i class="fa-regular fa-calendar-check"></i>
+          <span>{{ 'Frontdesk:EmptyArrivals' | abpLocalization }}</span>
+        </div>
+
+        <ul *ngIf="data.todayArrivals.length > 0" class="quick-list">
+          <li *ngFor="let item of data.todayArrivals" class="quick-row">
+            <div class="row-main" (click)="openReservationDetail(item)">
+              <div class="row-top">
+                <span class="booking-code">{{ item.bookingCode }}</span>
+                <bh-status-badge [variant]="getStatusVariant(item.bookingStatus)">
+                  {{ ('Frontdesk:BookingStatus_' + item.bookingStatus) | abpLocalization }}
+                </bh-status-badge>
+              </div>
+              <div class="guest-name">{{ item.guestFullName }} • {{ item.guestPhone }}</div>
+              <div class="row-meta">
+                <span>{{ item.roomTypeName || '—' }}</span>
+                <span *ngIf="item.assignedRoomNumber" class="room-chip">{{ item.assignedRoomNumber }}</span>
+              </div>
+            </div>
+            <div class="row-action">
+              <button
+                *ngIf="item.bookingStatus === BookingStatus.Confirmed"
+                type="button"
+                class="btn-frontdesk-primary"
+                (click)="goToCheckIn(item.bookingId)">
+                {{ 'RoomRack:CheckInAction' | abpLocalization }}
+              </button>
+              <button
+                *ngIf="item.bookingStatus === BookingStatus.PendingConfirmation"
+                type="button"
+                class="btn-frontdesk-outline"
+                (click)="openReservationDetail(item)">
+                {{ 'Frontdesk:ActionConfirm' | abpLocalization }}
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Expected Departures Today -->
+      <section class="panel-card">
+        <div class="panel-head">
+          <h2><i class="fa-solid fa-door-open"></i> {{ 'Frontdesk:TodayDeparturesTitle' | abpLocalization }}</h2>
+          <button type="button" class="link-btn" (click)="goToCheckOut()">
+            {{ 'Frontdesk:ViewAll' | abpLocalization }} <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div *ngIf="data.todayDepartures.length === 0" class="panel-empty">
+          <i class="fa-regular fa-calendar-xmark"></i>
+          <span>{{ 'Frontdesk:EmptyDepartures' | abpLocalization }}</span>
+        </div>
+
+        <ul *ngIf="data.todayDepartures.length > 0" class="quick-list">
+          <li *ngFor="let item of data.todayDepartures" class="quick-row">
+            <div class="row-main" (click)="openReservationDetail(item)">
+              <div class="row-top">
+                <span class="booking-code">{{ item.bookingCode }}</span>
+                <span *ngIf="item.assignedRoomNumber" class="room-chip">{{ item.assignedRoomNumber }}</span>
+              </div>
+              <div class="guest-name">{{ item.guestFullName }} • {{ item.guestPhone }}</div>
+              <div class="row-meta">
+                <span>{{ item.checkInDate | date:'dd/MM' }} → {{ item.checkOutDate | date:'dd/MM' }}</span>
+              </div>
+            </div>
+            <div class="row-action">
+              <button type="button" class="btn-checkout-sm" (click)="goToCheckOut(item.bookingId)">
+                {{ 'RoomRack:CheckOutAction' | abpLocalization }}
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Pending Confirmation Bookings -->
+      <section class="panel-card">
+        <div class="panel-head">
+          <h2><i class="fa-solid fa-hourglass-half"></i> {{ 'Frontdesk:PendingBookingsTitle' | abpLocalization }}</h2>
+          <button type="button" class="link-btn" (click)="goToReservations(BookingStatus.PendingConfirmation)">
+            {{ 'Frontdesk:ViewAll' | abpLocalization }} <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div *ngIf="data.pendingBookings.length === 0" class="panel-empty">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>{{ 'Frontdesk:EmptyPending' | abpLocalization }}</span>
+        </div>
+
+        <ul *ngIf="data.pendingBookings.length > 0" class="quick-list">
+          <li *ngFor="let item of data.pendingBookings" class="quick-row">
+            <div class="row-main" (click)="openReservationDetail(item)">
+              <div class="row-top">
+                <span class="booking-code">{{ item.bookingCode }}</span>
+                <span class="date-meta">{{ item.checkInDate | date:'dd/MM' }} – {{ item.checkOutDate | date:'dd/MM' }}</span>
+              </div>
+              <div class="guest-name">{{ item.guestFullName }} • {{ item.guestPhone }}</div>
+              <div class="row-meta">{{ item.roomTypeName || '—' }}</div>
+            </div>
+            <div class="row-action">
+              <button type="button" class="btn-frontdesk-outline" (click)="openReservationDetail(item)">
+                {{ 'Frontdesk:ViewReservation' | abpLocalization }}
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </ng-container>
+</div>

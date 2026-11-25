@@ -1,0 +1,146 @@
+<div class="pricing-calendar-card">
+  <div class="calendar-toolbar">
+    <div class="toolbar-left">
+      <h2 class="section-title mb-0">
+        <i class="fa-solid fa-calendar-days me-2"></i>
+        {{ 'Manager:Rates:SectionCalendar' | abpLocalization }}
+      </h2>
+      @if (calendar) {
+        <span class="selected-plan-pill">
+          {{ calendar.ratePlanName }} ({{ calendar.ratePlanCode }})
+        </span>
+      }
+    </div>
+
+    <div class="toolbar-controls">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-dark"
+        [title]="'Manager:Rates:CalendarPrevMonth' | abpLocalization"
+        (click)="goPrevMonth()"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+
+      <bh-searchable-select
+        class="calendar-select month-select"
+        [ngModel]="month"
+        (ngModelChange)="onMonthSelect($event)"
+        [options]="monthOptions"
+        [searchable]="false"
+        [clearable]="false"
+      ></bh-searchable-select>
+
+      <bh-searchable-select
+        class="calendar-select year-select"
+        [ngModel]="year"
+        (ngModelChange)="onYearSelect($event)"
+        [options]="yearOptions()"
+        [searchable]="false"
+        [clearable]="false"
+      ></bh-searchable-select>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-dark"
+        [title]="'Manager:Rates:CalendarNextMonth' | abpLocalization"
+        (click)="goNextMonth()"
+      >
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+      <button type="button" class="btn btn-sm btn-dark text-info fw-semibold" (click)="goToday()">
+        {{ 'Manager:Rates:CalendarToday' | abpLocalization }}
+      </button>
+    </div>
+  </div>
+
+  @if (calendar && !calendar.isRatePlanActive) {
+    <div class="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center">
+      <i class="fa-solid fa-triangle-exclamation me-2"></i>
+      <span>{{ 'Manager:Rates:CalendarInactiveBanner' | abpLocalization }}</span>
+    </div>
+  }
+
+  <div class="calendar-legend mb-3">
+    <span class="legend-item">
+      <span class="legend-dot dot-base"></span>
+      {{ 'Manager:Rates:CalendarLegendBase' | abpLocalization }}
+    </span>
+    <span class="legend-item">
+      <span class="legend-dot dot-override"></span>
+      {{ 'Manager:Rates:CalendarLegendOverride' | abpLocalization }}
+    </span>
+    <span class="legend-item">
+      <span class="legend-dot dot-restriction"></span>
+      {{ 'Manager:Rates:CalendarLegendCtaCtd' | abpLocalization }}
+    </span>
+    <span class="legend-item">
+      <span class="legend-dot dot-past"></span>
+      {{ 'Manager:Rates:CalendarLegendPast' | abpLocalization }}
+    </span>
+  </div>
+
+  @if (isLoading) {
+    <div class="py-5 text-center text-muted">
+      <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+      <p class="mb-0 small">{{ 'Common:Loading' | abpLocalization }}</p>
+    </div>
+  } @else if (!calendar) {
+    <div class="py-5 text-center text-muted border rounded-3 bg-light">
+      <i class="fa-regular fa-calendar fa-2x mb-2 opacity-50"></i>
+      <p class="mb-0 small">{{ 'Manager:Rates:SelectRatePlanPrompt' | abpLocalization }}</p>
+    </div>
+  } @else {
+    <div class="calendar-grid-wrapper">
+      <div class="calendar-weekdays">
+        @for (dayKey of weekdayKeys; track dayKey) {
+          <div class="weekday-header">{{ dayKey | abpLocalization }}</div>
+        }
+      </div>
+
+      <div class="calendar-cells">
+        @for (slot of calendarSlots(); track $index) {
+          @if (slot.isPadding || !slot.cell) {
+            <div class="day-cell padding-cell"></div>
+          } @else {
+            <button
+              type="button"
+              class="day-cell"
+              [class.is-overridden]="slot.cell.isPriceOverridden"
+              [class.is-base]="!slot.cell.isPriceOverridden"
+              [class.is-past]="slot.cell.isPastDate"
+              [class.is-today]="slot.cell.isToday"
+              [class.is-closed]="!slot.cell.isOpenForSale"
+              (click)="onCellClick(slot.cell)"
+            >
+              <div class="cell-top">
+                <span class="day-num">{{ getDayNumber(slot.cell.applicableDate) }}</span>
+                <span class="sale-dot" [class.open]="slot.cell.isOpenForSale" [class.closed]="!slot.cell.isOpenForSale"></span>
+              </div>
+
+              <div class="cell-price">
+                {{ slot.cell.effectivePrice | number: '1.0-0' }}
+                <span class="currency">đ</span>
+              </div>
+
+              <div class="cell-badges">
+                @if (slot.cell.isPriceOverridden) {
+                  <span class="mini-badge badge-ovr">OVR</span>
+                } @else {
+                  <span class="mini-badge badge-base">BASE</span>
+                }
+                @if (slot.cell.isClosedToArrival) {
+                  <span class="mini-badge badge-cta">CTA</span>
+                }
+                @if (slot.cell.isClosedToDeparture) {
+                  <span class="mini-badge badge-ctd">CTD</span>
+                }
+              </div>
+            </button>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,168 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="modalConfig"
+  [busy]="isSaving()"
+  (cancel)="onCancel()"
+  (confirm)="onConfirm()"
+>
+  @if (overrideItem) {
+    @if (!isEditMode) {
+      <div class="detail-grid">
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:ColStartDate' | abpLocalization }}</span>
+          <span class="value">{{ overrideItem.startDate | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:ColEndDate' | abpLocalization }}</span>
+          <span class="value">{{ overrideItem.endDate | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:ColAdjustmentType' | abpLocalization }}</span>
+          <span class="value">
+            @if (overrideItem.adjustmentType === PriceAdjustmentType.FixedPrice) {
+              {{ 'Manager:Rates:ModeFixedPrice' | abpLocalization }}
+            } @else if (overrideItem.adjustmentType === PriceAdjustmentType.Percentage) {
+              {{ 'Manager:Rates:ModePercentage' | abpLocalization }}
+            } @else {
+              {{ 'Manager:Rates:ModeRestrictionsOnly' | abpLocalization }}
+            }
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:ColEffectiveSnapshot' | abpLocalization }}</span>
+          <span class="value fw-bold text-primary">
+            @if (overrideItem.calculatedEffectivePrice) {
+              {{ overrideItem.calculatedEffectivePrice | number: '1.0-0' }} VNĐ
+            } @else {
+              {{ 'Manager:Rates:CalendarLegendBase' | abpLocalization }}
+            }
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:Restrictions' | abpLocalization }}</span>
+          <span class="value">
+            @if (overrideItem.isClosedToArrival) {
+              <span class="badge bg-danger me-1">CTA</span>
+            }
+            @if (overrideItem.isClosedToDeparture) {
+              <span class="badge bg-warning text-dark">CTD</span>
+            }
+            @if (!overrideItem.isClosedToArrival && !overrideItem.isClosedToDeparture) {
+              -
+            }
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">{{ 'Manager:Rates:ColCreatedBy' | abpLocalization }}</span>
+          <span class="value">{{ overrideItem.creatorName }} ({{ overrideItem.creationTime | date: 'dd/MM/yyyy HH:mm' }})</span>
+        </div>
+      </div>
+    } @else {
+      @if (overrideItem.isStraddlingToday) {
+        <div class="alert alert-warning py-2 px-3 small mb-3">
+          <i class="fa-solid fa-clock-rotate-left me-1"></i>
+          {{ 'Manager:Rates:StraddlingTodayNotice' | abpLocalization }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onConfirm()">
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label">
+              {{ 'Manager:Rates:ColStartDate' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <input type="date" class="form-control form-control-sm" formControlName="startDate" [min]="todayIso" />
+          </div>
+          <div class="col-6">
+            <label class="form-label">
+              {{ 'Manager:Rates:ColEndDate' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <input type="date" class="form-control form-control-sm" formControlName="endDate" [min]="form.value.startDate || todayIso" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">
+            {{ 'Manager:Rates:AdjustmentMode' | abpLocalization }} <span class="text-danger">*</span>
+          </label>
+          <bh-searchable-select
+            formControlName="adjustmentType"
+            [options]="adjustmentModeOptions"
+            [searchable]="false"
+            [clearable]="false"
+          ></bh-searchable-select>
+        </div>
+
+        @if (form.value.adjustmentType === PriceAdjustmentType.FixedPrice) {
+          <div class="mb-3">
+            <label class="form-label">
+              {{ 'Manager:Rates:FixedPriceLabel' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <input type="number" class="form-control form-control-sm" formControlName="adjustmentValue" min="1" step="10000" />
+          </div>
+        } @else if (form.value.adjustmentType === PriceAdjustmentType.Percentage) {
+          <div class="mb-3">
+            <label class="form-label">
+              {{ 'Manager:Rates:PercentageLabel' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <input type="number" class="form-control form-control-sm" formControlName="adjustmentValue" step="1" />
+          </div>
+        }
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="restriction-chip" [class.active]="form.value.isClosedToArrival">
+              <input type="checkbox" class="form-check-input me-2" formControlName="isClosedToArrival" />
+              <span>CTA</span>
+            </label>
+          </div>
+          <div class="col-6">
+            <label class="restriction-chip" [class.active]="form.value.isClosedToDeparture">
+              <input type="checkbox" class="form-check-input me-2" formControlName="isClosedToDeparture" />
+              <span>CTD</span>
+            </label>
+          </div>
+        </div>
+
+        @if (conflictDetected()) {
+          <div class="alert alert-warning py-2 px-3 small mb-3">
+            <div class="fw-bold text-danger mb-1">{{ 'Manager:Rates:ConflictAlertTitle' | abpLocalization }}</div>
+            <div class="d-flex flex-column gap-1 mt-2">
+              <label class="d-flex align-items-center gap-2">
+                <input
+                  type="radio"
+                  name="editConflict"
+                  [checked]="conflictResolution() === PriceConflictResolution.ReplaceExisting"
+                  (change)="conflictResolution.set(PriceConflictResolution.ReplaceExisting)"
+                />
+                <span>{{ 'Manager:Rates:ConflictReplace' | abpLocalization }}</span>
+              </label>
+              <label class="d-flex align-items-center gap-2">
+                <input
+                  type="radio"
+                  name="editConflict"
+                  [checked]="conflictResolution() === PriceConflictResolution.SkipExisting"
+                  (change)="conflictResolution.set(PriceConflictResolution.SkipExisting)"
+                />
+                <span>{{ 'Manager:Rates:ConflictSkip' | abpLocalization }}</span>
+              </label>
+              <label class="d-flex align-items-center gap-2">
+                <input
+                  type="radio"
+                  name="editConflict"
+                  [checked]="conflictResolution() === PriceConflictResolution.Cancel"
+                  (change)="conflictResolution.set(PriceConflictResolution.Cancel)"
+                />
+                <span>{{ 'Manager:Rates:ConflictCancel' | abpLocalization }}</span>
+              </label>
+            </div>
+          </div>
+        }
+
+        @if (errorKey()) {
+          <div class="alert alert-danger py-2 px-3 small mb-0">{{ errorKey()! | abpLocalization }}</div>
+        }
+      </form>
+    }
+  }
+</bh-modal>

@@ -1,0 +1,286 @@
+<div class="hotel-list-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">{{ 'TenantHotels:Title' | abpLocalization }}</h2>
+      <p class="page-subtitle">{{ 'TenantHotels:Subtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus me-1"></i>
+      {{ 'TenantHotels:CreateHotel' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- KPI Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-blue">
+        <i class="fa-solid fa-building"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-value">{{ totalBranches }}</span>
+        <span class="stat-label">{{ 'TenantHotels:TotalBranches' | abpLocalization }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-green">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-value">{{ operatingBranches }}</span>
+        <span class="stat-label">{{ 'TenantHotels:OperatingBranches' | abpLocalization }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-amber">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-value">{{ suspendedBranches }}</span>
+        <span class="stat-label">{{ 'TenantHotels:MaintenanceBranches' | abpLocalization }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-purple">
+        <i class="fa-solid fa-door-open"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-value">{{ totalRoomCapacity }}</span>
+        <span class="stat-label">{{ 'TenantHotels:TotalCapacity' | abpLocalization }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        class="form-control search-input"
+        [(ngModel)]="searchQuery"
+        [placeholder]="'TenantHotels:SearchPlaceholder' | abpLocalization"
+      />
+    </div>
+
+    <div class="status-filter">
+      <bh-searchable-select
+        [(ngModel)]="selectedStatusFilter"
+        [options]="statusFilterOptions"
+        [searchable]="false"
+        [clearable]="false"
+        [placeholder]="'TenantHotels:FilterAllStatus' | abpLocalization"
+      ></bh-searchable-select>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="hotel-table">
+        <thead>
+          <tr>
+            <th>{{ 'TenantHotels:ColName' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColCode' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColRating' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColCapacity' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColCheckInOut' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColManager' | abpLocalization }}</th>
+            <th>{{ 'TenantHotels:ColStatus' | abpLocalization }}</th>
+            <th class="text-end">{{ 'TenantHotels:ColActions' | abpLocalization }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading -->
+          <tr *ngIf="isLoading">
+            <td colspan="8" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">{{ 'Common:Loading' | abpLocalization }}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data -->
+          <ng-container *ngIf="!isLoading">
+            <tr *ngFor="let h of filteredBranches">
+              <td>
+                <div class="hotel-info-cell">
+                  <div class="hotel-avatar">
+                    <i class="fa-solid fa-hotel"></i>
+                  </div>
+                  <div class="hotel-meta">
+                    <span class="hotel-name">{{ h.name }}</span>
+                    <span class="hotel-address">
+                      <i class="fa-solid fa-location-dot me-1"></i>
+                      {{ h.address }}{{ h.city ? ', ' + h.city : '' }}
+                    </span>
+                    <span class="hotel-contact">
+                      <i class="fa-solid fa-phone me-1"></i> {{ h.phone }} •
+                      <i class="fa-solid fa-envelope me-1"></i> {{ h.email }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <span class="code-badge">{{ h.code }}</span>
+              </td>
+              <td class="text-nowrap">
+                <div class="stars-cell">
+                  <span class="stars-gold">
+                    <i *ngFor="let s of [1, 2, 3, 4, 5]" class="fa-solid fa-star" [class.inactive]="s > h.starRating"></i>
+                  </span>
+                  <span class="stars-label">{{ h.starRating }} {{ 'TenantHotels:Stars' | abpLocalization }}</span>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <div class="rooms-badge">
+                  <i class="fa-solid fa-door-open me-1"></i>
+                  <strong>{{ h.roomCount }}</strong> {{ 'TenantHotels:RoomsCount' | abpLocalization }}
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <div class="small">
+                  <div><span class="text-muted">{{ 'TenantHotels:CheckInShort' | abpLocalization }}:</span> <strong>{{ h.standardCheckInTime ? h.standardCheckInTime.slice(0, 5) : '14:00' }}</strong></div>
+                  <div><span class="text-muted">{{ 'TenantHotels:CheckOutShort' | abpLocalization }}:</span> <strong>{{ h.standardCheckOutTime ? h.standardCheckOutTime.slice(0, 5) : '12:00' }}</strong></div>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <div class="manager-cell">
+                  <ng-container *ngIf="h.managerName; else noManagerTpl">
+                    <i class="fa-solid fa-user-tie text-primary me-1"></i>
+                    <span>{{ h.managerName }}</span>
+                  </ng-container>
+                  <ng-template #noManagerTpl>
+                    <span class="text-muted fst-italic">—</span>
+                  </ng-template>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <span class="status-pill" [ngClass]="getStatusBadgeClass(h.status)">
+                  {{ getStatusKey(h.status) | abpLocalization }}
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <div class="actions-group">
+                  <!-- Edit -->
+                  <button
+                    type="button"
+                    class="btn-action btn-edit"
+                    (click)="openEditModal(h)"
+                    [title]="'Common:Edit' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+
+                  <!-- Assign Manager -->
+                  <button
+                    type="button"
+                    class="btn-action btn-assign"
+                    (click)="openAssignManagerModal(h)"
+                    [title]="'TenantHotels:AssignManager' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-user-gear"></i>
+                  </button>
+
+                  <!-- Suspend (Operating only) -->
+                  <button
+                    *ngIf="h.status === HotelStatus.Operating"
+                    type="button"
+                    class="btn-action btn-suspend"
+                    (click)="openSuspendModal(h)"
+                    [title]="'TenantHotels:SuspendHotel' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-ban"></i>
+                  </button>
+
+                  <!-- Activate (Suspended / Closed) -->
+                  <button
+                    *ngIf="h.status !== HotelStatus.Operating"
+                    type="button"
+                    class="btn-action btn-activate"
+                    (click)="activateHotel(h)"
+                    [title]="'TenantHotels:ResumeHotel' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-circle-play"></i>
+                  </button>
+
+                  <!-- Delete -->
+                  <button
+                    type="button"
+                    class="btn-action btn-delete"
+                    (click)="openDeleteModal(h)"
+                    [title]="'Common:Delete' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="filteredBranches.length === 0">
+              <td colspan="8" class="empty-state-cell py-5 text-center">
+                <div class="empty-state-container">
+                  <div class="empty-icon-wrapper mb-3">
+                    <i class="fa-solid fa-hotel fa-3x text-muted opacity-50"></i>
+                  </div>
+                  <h4 class="empty-title mb-2 text-dark">{{ 'TenantHotels:EmptyTitle' | abpLocalization }}</h4>
+                  <p class="empty-subtitle text-muted mb-4">{{ 'TenantHotels:EmptySubtitle' | abpLocalization }}</p>
+                  <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    {{ 'TenantHotels:CreateHotel' | abpLocalization }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm / Sửa -->
+<bh-hotel-modal
+  [isOpen]="isCreateEditModalOpen"
+  [hotel]="selectedHotelForEdit"
+  [provinceOptions]="provinceOptions"
+  [managerOptions]="managerUserIdOptions"
+  [errorMessage]="hotelModalErrorMessage"
+  [isSubmitting]="isHotelSaving"
+  (save)="onSaveHotel($event)"
+  (cancel)="isCreateEditModalOpen = false; hotelModalErrorMessage = null"
+></bh-hotel-modal>
+
+<!-- Modal Tạm Ngừng Hoạt Động (Scheduled & Emergency) -->
+<bh-hotel-suspend-modal
+  [isOpen]="isSuspendModalOpen"
+  [hotel]="selectedHotelForSuspend"
+  (suspend)="onSuspendHotel($event)"
+  (cancel)="isSuspendModalOpen = false"
+></bh-hotel-suspend-modal>
+
+<!-- Modal Phân Công Quản Lý -->
+<bh-hotel-manager-modal
+  [isOpen]="isAssignModalOpen"
+  [hotel]="selectedHotelForAssign"
+  [managerOptions]="managerUserIdOptions"
+  (assign)="onAssignManager($event)"
+  (cancel)="isAssignModalOpen = false"
+></bh-hotel-manager-modal>
+
+<!-- Modal Xóa Khách Sạn -->
+<bh-modal
+  [isOpen]="isDeleteModalOpen"
+  [config]="deleteModalConfig"
+  (confirm)="confirmDelete()"
+  (cancel)="isDeleteModalOpen = false"
+>
+  <p class="mb-0" *ngIf="deletingHotel">
+    {{ 'TenantHotels:DeleteConfirm' | abpLocalization }}
+    <strong class="d-block mt-2 text-danger">{{ deletingHotel.name }} ({{ deletingHotel.code }})</strong>
+  </p>
+</bh-modal>

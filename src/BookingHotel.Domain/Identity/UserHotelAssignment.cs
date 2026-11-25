@@ -4,7 +4,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace BookingHotel.Identity;
 
-public class UserHotelAssignment : CreationAuditedEntity<Guid>, IMultiTenant
+public class UserHotelAssignment : FullAuditedEntity<Guid>, IMultiTenant
 {
     public virtual Guid? TenantId { get; set; }
 
@@ -14,7 +14,17 @@ public class UserHotelAssignment : CreationAuditedEntity<Guid>, IMultiTenant
 
     public virtual DateTime AssignedDate { get; set; }
 
+    public virtual DateTime AssignedAt
+    {
+        get => AssignedDate;
+        set => AssignedDate = value;
+    }
+
+    public virtual DateTime? UnassignedAt { get; set; }
+
     public virtual bool IsPrimary { get; set; }
+
+    public virtual bool IsActive { get; set; } = true;
 
     protected UserHotelAssignment()
     {
@@ -25,7 +35,8 @@ public class UserHotelAssignment : CreationAuditedEntity<Guid>, IMultiTenant
         Guid userId,
         Guid hotelId,
         Guid? tenantId = null,
-        bool isPrimary = true)
+        bool isPrimary = true,
+        bool isActive = true)
         : base(id)
     {
         UserId = userId;
@@ -33,6 +44,12 @@ public class UserHotelAssignment : CreationAuditedEntity<Guid>, IMultiTenant
         TenantId = tenantId;
         AssignedDate = DateTime.UtcNow;
         IsPrimary = isPrimary;
+        IsActive = isActive;
+    }
+
+    public void Unassign(DateTime unassignedAt)
+    {
+        IsActive = false;
+        UnassignedAt = unassignedAt;
     }
 }
-

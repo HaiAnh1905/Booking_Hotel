@@ -7,6 +7,7 @@ public static class BookingHotelIdentityConsts
     public const string CurrentLockoutMinutesProperty = "CurrentLockoutMinutes";
     public const string DeactivatedReasonProperty = "DeactivatedReason";
     public const string GoogleIdProperty = "GoogleId";
+    public const string ShouldChangePasswordOnNextLoginProperty = "ShouldChangePasswordOnNextLogin";
 
     public const string DeactivatedReasonBruteForce = "BruteForceLimitExceeded";
 }

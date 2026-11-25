@@ -1,0 +1,135 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="modalConfig"
+  [busy]="isSaving()"
+  (cancel)="onCancel()"
+  (confirm)="onConfirm()"
+>
+  @if (dayCell) {
+    <div class="day-summary-box mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div class="fw-bold fs-6 text-dark">{{ dayCell.applicableDate | date: 'dd/MM/yyyy' }}</div>
+          <div class="small text-muted">{{ ratePlanName }}</div>
+        </div>
+        <span
+          class="badge"
+          [class.bg-success]="dayCell.isOpenForSale"
+          [class.bg-secondary]="!dayCell.isOpenForSale"
+        >
+          {{ (dayCell.isOpenForSale ? 'Manager:Rates:OpenForSale' : 'Manager:Rates:ClosedForSale') | abpLocalization }}
+        </span>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-metric">
+          <span class="metric-label">{{ 'Manager:Rates:ColBasePrice' | abpLocalization }}</span>
+          <span class="metric-value">{{ dayCell.basePrice | number: '1.0-0' }} VNĐ</span>
+        </div>
+        <div class="summary-metric highlight">
+          <span class="metric-label">{{ 'Manager:Rates:CurrentPrice' | abpLocalization }}</span>
+          <span class="metric-value">{{ dayCell.effectivePrice | number: '1.0-0' }} VNĐ</span>
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        @if (dayCell.isPriceOverridden) {
+          <span class="badge bg-dark text-info">{{ 'Manager:Rates:CalendarLegendOverride' | abpLocalization }}</span>
+        } @else {
+          <span class="badge bg-light text-dark border">{{ 'Manager:Rates:CalendarLegendBase' | abpLocalization }}</span>
+        }
+        @if (dayCell.isClosedToArrival) {
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle">CTA</span>
+        }
+        @if (dayCell.isClosedToDeparture) {
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle">CTD</span>
+        }
+      </div>
+    </div>
+
+    @if (dayCell.isPastDate) {
+      <div class="alert alert-secondary py-2 px-3 small mb-0">
+        <i class="fa-solid fa-lock me-1"></i>
+        {{ 'Manager:Rates:PastDateReadOnlyNote' | abpLocalization }}
+      </div>
+    } @else if (!dayCell.isOpenForSale) {
+      <div class="alert alert-warning py-2 px-3 small mb-0">
+        <i class="fa-solid fa-ban me-1"></i>
+        {{ 'Manager:Rates:CalendarInactiveBanner' | abpLocalization }}
+      </div>
+    } @else {
+      <div class="quick-edit-section">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-semibold text-dark mb-0">{{ 'Manager:Rates:QuickEditSectionTitle' | abpLocalization }}</h6>
+          @if (dayCell.overrideId) {
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              [disabled]="isSaving()"
+              (click)="onClearOverride()"
+            >
+              <i class="fa-solid fa-rotate-left me-1"></i>
+              {{ 'Manager:Rates:ClearOverrideButton' | abpLocalization }}
+            </button>
+          }
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onConfirm()">
+          <div class="mb-3">
+            <label class="form-label">
+              {{ 'Manager:Rates:AdjustmentMode' | abpLocalization }} <span class="text-danger">*</span>
+            </label>
+            <bh-searchable-select
+              formControlName="adjustmentType"
+              [options]="adjustmentModeOptions"
+              [searchable]="false"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+
+          @if (form.value.adjustmentType === PriceAdjustmentType.FixedPrice) {
+            <div class="mb-3">
+              <label class="form-label">
+                {{ 'Manager:Rates:FixedPriceLabel' | abpLocalization }} <span class="text-danger">*</span>
+              </label>
+              <input type="number" class="form-control form-control-sm" formControlName="adjustmentValue" min="1" step="10000" />
+            </div>
+          } @else if (form.value.adjustmentType === PriceAdjustmentType.Percentage) {
+            <div class="mb-3">
+              <label class="form-label">
+                {{ 'Manager:Rates:PercentageLabel' | abpLocalization }} <span class="text-danger">*</span>
+              </label>
+              <input type="number" class="form-control form-control-sm" formControlName="adjustmentValue" step="1" />
+              <div class="form-text small">{{ 'Manager:Rates:PercentageHint' | abpLocalization }}</div>
+            </div>
+          } @else {
+            <div class="alert alert-light border py-2 px-3 small mb-3">
+              {{ 'Manager:Rates:RestrictionsOnlyHint' | abpLocalization }}
+            </div>
+          }
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="restriction-chip" [class.active]="form.value.isClosedToArrival">
+                <input type="checkbox" class="form-check-input me-2" formControlName="isClosedToArrival" />
+                <span>{{ 'Manager:Rates:CTA' | abpLocalization }}</span>
+              </label>
+            </div>
+            <div class="col-6">
+              <label class="restriction-chip" [class.active]="form.value.isClosedToDeparture">
+                <input type="checkbox" class="form-check-input me-2" formControlName="isClosedToDeparture" />
+                <span>{{ 'Manager:Rates:CTD' | abpLocalization }}</span>
+              </label>
+            </div>
+          </div>
+
+          @if (errorKey()) {
+            <div class="alert alert-danger py-2 px-3 small mb-0 mt-2">
+              {{ errorKey()! | abpLocalization }}
+            </div>
+          }
+        </form>
+      </div>
+    }
+  }
+</bh-modal>

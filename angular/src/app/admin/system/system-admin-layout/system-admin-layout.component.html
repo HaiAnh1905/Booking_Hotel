@@ -1,0 +1,118 @@
+<div class="system-admin-shell" [class.collapsed]="isCollapsed()">
+  <!-- Backdrop cho thiết bị di động -->
+  <div 
+    class="mobile-backdrop" 
+    *ngIf="isMobileSidebarOpen()" 
+    (click)="toggleMobileSidebar()">
+  </div>
+
+  <!-- Sidebar Phân hệ Quản trị Nền tảng (Platform Dark Control) -->
+  <aside class="system-sidebar" [class.mobile-open]="isMobileSidebarOpen()">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-hotel brand-icon"></i>
+        <div class="brand-text" *ngIf="!isCollapsed()">
+          <span class="brand-name">Booking Hotel</span>
+          <span class="host-badge">
+            <i class="fa-solid fa-server"></i> System Host
+          </span>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        class="collapse-btn" 
+        (click)="toggleSidebar()" 
+        [title]="'Common:CollapseSidebar' | abpLocalization">
+        <i class="fa-solid" [ngClass]="isCollapsed() ? 'fa-angles-right' : 'fa-angles-left'"></i>
+      </button>
+    </div>
+
+    <!-- Danh mục Menu Quản trị Nền tảng -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li *ngFor="let item of menuItems" class="nav-item">
+          <a 
+            [routerLink]="item.route" 
+            routerLinkActive="active" 
+            [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+            class="nav-link"
+            (click)="isMobileSidebarOpen.set(false)"
+            [title]="item.labelKey | abpLocalization">
+            <i [class]="item.icon + ' nav-icon'"></i>
+            <span class="nav-label" *ngIf="!isCollapsed()">{{ item.labelKey | abpLocalization }}</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Chân Sidebar: Phiên bản & Thông số nền tảng -->
+    <div class="sidebar-footer" *ngIf="!isCollapsed()">
+      <div class="platform-meta">
+        <span class="platform-status"><span class="dot online"></span> {{ 'SystemDashboard:PlatformStatusActive' | abpLocalization }}</span>
+        <span class="platform-cluster">Host Cluster: Asia-VN</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Vùng nội dung chính -->
+  <div class="main-wrapper">
+    <!-- Topbar Nền tảng -->
+    <header class="system-topbar">
+      <div class="topbar-left">
+        <button 
+          type="button" 
+          class="mobile-menu-btn" 
+          (click)="toggleMobileSidebar()" 
+          title="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="portal-indicator">
+          <span class="portal-badge-purple">
+            <i class="fa-solid fa-shield-cat"></i> System Admin Portal
+          </span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Chuyển đổi ngôn ngữ -->
+        <bh-language-switcher></bh-language-switcher>
+
+        <!-- Trình đơn Người dùng -->
+        <div class="user-dropdown-container">
+          <button 
+            type="button" 
+            class="user-btn" 
+            (click)="toggleUserMenu()"
+            [attr.aria-expanded]="isUserMenuOpen()">
+            <div class="user-avatar">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <span class="user-role-label">System Admin</span>
+            <i class="fa-solid fa-chevron-down caret-icon"></i>
+          </button>
+
+          <div class="user-menu-dropdown" *ngIf="isUserMenuOpen()">
+            <div class="user-menu-header">
+              <div class="user-name">{{ currentUserName() || ('Role:SystemAdmin' | abpLocalization) }}</div>
+              <div class="user-email" *ngIf="currentUserEmail()">{{ currentUserEmail() }}</div>
+            </div>
+            <hr class="dropdown-divider" />
+            <a routerLink="/auth/change-password" class="dropdown-item" (click)="toggleUserMenu()">
+              <i class="fa-solid fa-key"></i> {{ 'Common:ChangePassword' | abpLocalization }}
+            </a>
+            <hr class="dropdown-divider" />
+            <button type="button" class="dropdown-item text-danger" (click)="logout()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> {{ 'Common:Logout' | abpLocalization }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Router Outlet cho các view con -->
+    <main class="page-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+

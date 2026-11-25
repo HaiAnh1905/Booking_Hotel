@@ -1,0 +1,924 @@
+<div class="room-management-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'RoomManagement:DashboardTitle' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Manager:Room:PageSubtitle' | abpLocalization }}</p>
+    </div>
+
+    <!-- Navigation Tab Switcher & Quick Actions -->
+    <div class="header-actions-wrap">
+      <div class="action-buttons-group">
+        <button type="button" class="btn btn-outline-warning btn-sm" (click)="openPlannedClosureModal()">
+          <i class="fa-solid fa-calendar-xmark me-1"></i> {{ 'RoomManagement:PlannedClosure' | abpLocalization }}
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-sm" (click)="openEmergencyClosureModal()">
+          <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ 'RoomManagement:EmergencyClosure' | abpLocalization }}
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="openAddRoomModal()">
+          <i class="fa-solid fa-plus me-1"></i> {{ 'Manager:Room:AddRoom' | abpLocalization }}
+        </button>
+      </div>
+
+      <div class="tab-pills">
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="activeTab() === 'rooms'"
+          (click)="activeTab.set('rooms')">
+          <i class="fa-solid fa-bed me-2"></i> {{ 'Manager:Room:PhysicalRoomsTab' | abpLocalization }}
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="activeTab() === 'types'"
+          (click)="activeTab.set('types')">
+          <i class="fa-solid fa-shapes me-2"></i> {{ 'Manager:Room:RoomTypesTab' | abpLocalization }}
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="activeTab() === 'closures'"
+          (click)="activeTab.set('closures')">
+          <i class="fa-solid fa-clock-rotate-left me-2"></i> {{ 'RoomManagement:ClosureHistory' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading()">
+    <!-- TAB 1: Sơ đồ phòng thực tế dạng Lưới Thẻ theo Tầng (Physical Rooms by Floor) -->
+    <div *ngIf="activeTab() === 'rooms'" class="rooms-tab-content">
+      <!-- DASHBOARD OVERVIEW METRICS (RM-010 US1) -->
+      <div class="metrics-grid" *ngIf="dashboard()">
+        <div class="metric-card total-card">
+          <div class="metric-icon"><i class="fa-solid fa-hotel"></i></div>
+          <div class="metric-info">
+            <span class="metric-label">{{ 'RoomManagement:TotalRooms' | abpLocalization }}</span>
+            <span class="metric-value">{{ dashboard()?.totalRooms }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card occupied-card">
+          <div class="metric-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="metric-info">
+            <span class="metric-label">{{ 'RoomManagement:OccupiedRooms' | abpLocalization }}</span>
+            <span class="metric-value">{{ dashboard()?.occupiedRooms }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card vacant-card">
+          <div class="metric-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="metric-info">
+            <span class="metric-label">{{ 'RoomManagement:VacantRooms' | abpLocalization }}</span>
+            <span class="metric-value text-success">{{ dashboard()?.vacantRooms }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card reserved-card">
+          <div class="metric-icon"><i class="fa-solid fa-calendar-check"></i></div>
+          <div class="metric-info">
+            <span class="metric-label">{{ 'RoomManagement:ReservedRooms' | abpLocalization }}</span>
+            <span class="metric-value text-warning">{{ dashboard()?.reservedRooms }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card unavailable-card">
+          <div class="metric-icon"><i class="fa-solid fa-ban"></i></div>
+          <div class="metric-info">
+            <span class="metric-label">{{ 'RoomManagement:UnavailableRooms' | abpLocalization }}</span>
+            <span class="metric-value text-danger">{{ dashboard()?.unavailableRooms }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card rate-card">
+          <div class="metric-info w-100">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="metric-label">{{ 'RoomManagement:OccupancyRate' | abpLocalization }}</span>
+              <span class="rate-percent font-weight-bold">{{ dashboard()?.occupancyRate }}%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-info" [style.width.%]="dashboard()?.occupancyRate"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar bộ lọc đa chiều -->
+      <div class="toolbar-card">
+        <!-- Hàng 1: Tìm kiếm + Chế độ hiển thị -->
+        <div class="toolbar-top-row">
+          <div class="search-item">
+            <div class="input-icon-wrap">
+              <i class="fa-solid fa-magnifying-glass input-icon"></i>
+              <input
+                type="text"
+                class="form-control"
+                [placeholder]="'RoomManagement:SearchRoomPlaceholder' | abpLocalization"
+                [ngModel]="searchTerm()"
+                (ngModelChange)="searchTerm.set($event)" />
+              <button
+                *ngIf="searchTerm()"
+                type="button"
+                class="search-clear-btn"
+                (click)="searchTerm.set('')"
+                [title]="'Common:Clear' | abpLocalization">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-right-actions">
+            <button
+              *ngIf="hasActiveFilters()"
+              type="button"
+              class="btn btn-sm btn-outline-secondary reset-filter-btn"
+              (click)="resetFilters()">
+              <i class="fa-solid fa-rotate-left me-1"></i>
+              {{ 'Common:Reset' | abpLocalization }}
+            </button>
+
+            <div class="view-mode-toggle">
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.active]="roomViewMode() === 'table'"
+                (click)="roomViewMode.set('table')">
+                <i class="fa-solid fa-table-list me-1"></i> {{ 'RoomManagement:ViewTable' | abpLocalization }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.active]="roomViewMode() === 'cards'"
+                (click)="roomViewMode.set('cards')">
+                <i class="fa-solid fa-grip me-1"></i> {{ 'RoomManagement:ViewCards' | abpLocalization }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hàng 2: 4 bộ lọc chia đều 4 cột -->
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label class="filter-label">{{ 'RoomManagement:Floor' | abpLocalization }}</label>
+            <bh-searchable-select
+              class="toolbar-select"
+              [ngModel]="selectedFloor()"
+              (ngModelChange)="selectedFloor.set($event)"
+              [options]="floorFilterOptions"
+              [searchable]="false"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+
+          <div class="filter-field">
+            <label class="filter-label">{{ 'Manager:Room:Type' | abpLocalization }}</label>
+            <bh-searchable-select
+              class="toolbar-select"
+              [ngModel]="selectedRoomTypeFilter()"
+              (ngModelChange)="selectedRoomTypeFilter.set($event)"
+              [options]="roomTypeFilterOptions"
+              [searchable]="roomTypes().length > 5"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+
+          <div class="filter-field">
+            <label class="filter-label">{{ 'RoomManagement:OccupancyStatus' | abpLocalization }}</label>
+            <bh-searchable-select
+              class="toolbar-select"
+              [ngModel]="selectedOccupancyStatus()"
+              (ngModelChange)="selectedOccupancyStatus.set($event)"
+              [options]="occupancyFilterOptions"
+              [searchable]="false"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+
+          <div class="filter-field">
+            <label class="filter-label">{{ 'RoomManagement:OperationalStatus' | abpLocalization }}</label>
+            <bh-searchable-select
+              class="toolbar-select"
+              [ngModel]="selectedOperationalStatus()"
+              (ngModelChange)="selectedOperationalStatus.set($event)"
+              [options]="operationalFilterOptions"
+              [searchable]="false"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- DANH SÁCH THEO TẦNG (ROOMS GROUPED BY FLOOR) -->
+      <div class="floor-groups-container" *ngIf="floorGroups().length > 0">
+        <div *ngFor="let fg of floorGroups()" class="floor-section mb-4">
+          <div class="floor-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+              <span class="floor-title"><i class="fa-solid fa-layer-group text-primary me-2"></i>{{ 'Manager:Room:Floor' | abpLocalization }} {{ fg.floor }}</span>
+              <span class="floor-badge">{{ fg.rooms.length }} {{ 'Manager:Room:RoomsUnit' | abpLocalization }}</span>
+            </div>
+          </div>
+
+          <!-- 1. DẠNG BẢNG RIÊNG CHO TỪNG TẦNG (TABLE VIEW) -->
+          <div class="table-responsive bg-white rounded-3 border mt-2" *ngIf="roomViewMode() === 'table'">
+            <table class="table floor-room-table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="col-room-number" style="width: 140px;">{{ 'Manager:Room:Number' | abpLocalization }}</th>
+                  <th class="col-room-type" style="width: 180px;">{{ 'Manager:Room:TypeName' | abpLocalization }}</th>
+                  <th class="col-occupancy" style="width: 180px;">{{ 'RoomManagement:OccupancyStatus' | abpLocalization }}</th>
+                  <th class="col-operational" style="width: 180px;">{{ 'Manager:Room:OperationalStatus' | abpLocalization }}</th>
+                  <th class="col-housekeeping" style="width: 180px;">{{ 'Manager:HousekeepingStatus' | abpLocalization }}</th>
+                  <th class="col-active text-center" style="width: 90px;">{{ 'Common:Status' | abpLocalization }}</th>
+                  <th class="col-actions text-end" style="width: 200px;">{{ 'Common:Actions' | abpLocalization }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of fg.rooms" [ngClass]="getRoomStatusThemeClass(r)" [class.opacity-75]="!r.isActive">
+                  <!-- Số phòng & Tòa nhà -->
+                  <td class="col-room-number">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="room-number fw-bold fs-6">{{ r.roomNumber }}</span>
+                      <span class="building-badge" *ngIf="r.building">{{ r.building }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Hạng phòng -->
+                  <td class="col-room-type">
+                    <span class="fw-semibold text-secondary">{{ r.roomTypeName }}</span>
+                  </td>
+
+                  <!-- Trạng thái lưu trú (Occupancy) -->
+                  <td class="col-occupancy">
+                    <span class="status-chip" [ngClass]="getOccupancyBadgeClass(r.occupancyStatus)">
+                      <i class="fa-solid fa-user-tag me-1"></i>
+                      {{ ('RoomManagement:Occupancy:' + (r.occupancyStatus === RoomOccupancyStatus.Vacant ? 'Vacant' : r.occupancyStatus === RoomOccupancyStatus.Reserved ? 'Reserved' : r.occupancyStatus === RoomOccupancyStatus.Occupied ? 'Occupied' : 'Blocked')) | abpLocalization }}
+                    </span>
+                    <div class="occupant-note small text-muted mt-1" *ngIf="r.currentOccupantName">
+                      <i class="fa-solid fa-user me-1 text-primary"></i> {{ r.currentOccupantName }}
+                    </div>
+                  </td>
+
+                  <!-- Trạng thái vận hành (Operational) -->
+                  <td class="col-operational">
+                    <span class="status-chip" [ngClass]="getOperationalBadgeClass(r.operationalStatus)">
+                      <i class="fa-solid fa-circle-dot me-1"></i>
+                      {{ ('RoomManagement:Operational:' + (r.operationalStatus === RoomOperationalStatus.Active ? 'Active' : r.operationalStatus === RoomOperationalStatus.UnderMaintenance ? 'UnderMaintenance' : 'OutOfService')) | abpLocalization }}
+                    </span>
+                    <div class="occupant-note small text-danger mt-1" *ngIf="r.maintenanceReason">
+                      <i class="fa-solid fa-wrench me-1"></i> {{ r.maintenanceReason }}
+                    </div>
+                    <div class="occupant-note small text-danger mt-1" *ngIf="r.outOfServiceReason">
+                      <i class="fa-solid fa-ban me-1"></i> {{ r.outOfServiceReason }}
+                    </div>
+                  </td>
+
+                  <!-- Tình trạng vệ sinh (Housekeeping) -->
+                  <td class="col-housekeeping">
+                    <span class="status-chip" [ngClass]="getHousekeepingBadgeClass(r.housekeepingStatus)">
+                      <i class="fa-solid fa-broom me-1"></i>
+                      {{ getHousekeepingStatusKey(r.housekeepingStatus) | abpLocalization }}
+                    </span>
+                  </td>
+
+                  <!-- Trạng thái kinh doanh (Bật/Tắt) -->
+                  <td class="col-active text-center">
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0 bg-transparent"
+                      [title]="(r.isActive ? 'RoomManagement:Deactivate' : 'RoomManagement:Activate') | abpLocalization"
+                      (click)="toggleDeactivate(r)">
+                      <i class="fa-solid fa-2xl align-middle" [ngClass]="r.isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'"></i>
+                    </button>
+                  </td>
+
+                  <!-- Thao tác nghiệp vụ nhanh -->
+                  <td class="col-actions text-end">
+                    <div class="action-buttons-wrap d-inline-flex align-items-center gap-1">
+                      <!-- Đổi trạng thái vận hành -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary btn-action-icon"
+                        [title]="'Manager:Room:ChangeOperationalStatus' | abpLocalization"
+                        (click)="openStatusModal(r)">
+                        <i class="fa-solid fa-sliders"></i>
+                      </button>
+
+                      <!-- Nút cập nhật dọn phòng nhanh -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-success btn-action-icon"
+                        *ngIf="r.housekeepingStatus !== HousekeepingStatus.Clean"
+                        [title]="'Manager:Room:MarkClean' | abpLocalization"
+                        (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Clean)">
+                        <i class="fa-solid fa-check"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-warning btn-action-icon"
+                        *ngIf="r.housekeepingStatus !== HousekeepingStatus.Dirty"
+                        [title]="'Manager:Room:MarkDirty' | abpLocalization"
+                        (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Dirty)">
+                        <i class="fa-solid fa-broom"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-info btn-action-icon"
+                        *ngIf="r.housekeepingStatus !== HousekeepingStatus.Inspected"
+                        [title]="'Manager:Room:MarkInspected' | abpLocalization"
+                        (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Inspected)">
+                        <i class="fa-solid fa-stamp"></i>
+                      </button>
+
+                      <!-- Sửa & Xóa -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary btn-action-icon"
+                        [title]="'Common:Edit' | abpLocalization"
+                        (click)="openEditRoomModal(r)">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger btn-action-icon"
+                        [title]="'Common:Delete' | abpLocalization"
+                        (click)="deleteRoom(r)">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 2. DẠNG LƯỚI THẺ (CARDS VIEW) -->
+          <div class="rooms-grid mt-2" *ngIf="roomViewMode() === 'cards'">
+            <div *ngFor="let r of fg.rooms" class="room-card" [ngClass]="getRoomStatusThemeClass(r)" [class.not-active]="!r.isActive">
+              <div class="card-top">
+                <div class="room-meta-group">
+                  <span class="room-number">{{ r.roomNumber }}</span>
+                  <span class="building-badge" *ngIf="r.building">{{ r.building }}</span>
+                </div>
+                <div class="room-actions-quick">
+                  <button
+                    type="button"
+                    class="btn-icon-subtle"
+                    [class.text-muted]="!r.isActive"
+                    [title]="(r.isActive ? 'RoomManagement:Deactivate' : 'RoomManagement:Activate') | abpLocalization"
+                    (click)="toggleDeactivate(r)">
+                    <i class="fa-solid" [ngClass]="r.isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon-subtle"
+                    [title]="'Common:Edit' | abpLocalization"
+                    (click)="openEditRoomModal(r)">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon-subtle text-danger"
+                    [title]="'Common:Delete' | abpLocalization"
+                    (click)="deleteRoom(r)">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="room-type-title">{{ r.roomTypeName }}</div>
+
+              <!-- 2-DIMENSIONAL BADGES (Occupancy & Operational) -->
+              <div class="status-badges-row">
+                <span class="status-chip" [ngClass]="getOccupancyBadgeClass(r.occupancyStatus)">
+                  <i class="fa-solid fa-user-tag me-1"></i>
+                  {{ ('RoomManagement:Occupancy:' + (r.occupancyStatus === RoomOccupancyStatus.Vacant ? 'Vacant' : r.occupancyStatus === RoomOccupancyStatus.Reserved ? 'Reserved' : r.occupancyStatus === RoomOccupancyStatus.Occupied ? 'Occupied' : 'Blocked')) | abpLocalization }}
+                </span>
+
+                <span class="status-chip" [ngClass]="getOperationalBadgeClass(r.operationalStatus)">
+                  <i class="fa-solid fa-circle-dot me-1"></i>
+                  {{ ('RoomManagement:Operational:' + (r.operationalStatus === RoomOperationalStatus.Active ? 'Active' : r.operationalStatus === RoomOperationalStatus.UnderMaintenance ? 'UnderMaintenance' : 'OutOfService')) | abpLocalization }}
+                </span>
+
+                <span class="status-chip" [ngClass]="getHousekeepingBadgeClass(r.housekeepingStatus)">
+                  <i class="fa-solid fa-broom me-1"></i>
+                  {{ getHousekeepingStatusKey(r.housekeepingStatus) | abpLocalization }}
+                </span>
+              </div>
+
+              <!-- Khách đang ở hoặc ghi chú sự cố -->
+              <div class="occupant-note" *ngIf="r.currentOccupantName">
+                <i class="fa-solid fa-user me-1"></i> {{ r.currentOccupantName }}
+              </div>
+              <div class="occupant-note text-danger" *ngIf="r.maintenanceReason">
+                <i class="fa-solid fa-wrench me-1"></i> {{ r.maintenanceReason }}
+              </div>
+              <div class="occupant-note text-danger" *ngIf="r.outOfServiceReason">
+                <i class="fa-solid fa-ban me-1"></i> {{ r.outOfServiceReason }}
+              </div>
+
+              <!-- Thao tác nghiệp vụ nhanh -->
+              <div class="card-actions">
+                <button
+                  type="button"
+                  class="btn-action"
+                  [title]="'Manager:Room:ChangeOperationalStatus' | abpLocalization"
+                  (click)="openStatusModal(r)">
+                  <i class="fa-solid fa-sliders"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-action btn-clean"
+                  *ngIf="r.housekeepingStatus !== HousekeepingStatus.Clean"
+                  [title]="'Manager:Room:MarkClean' | abpLocalization"
+                  (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Clean)">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-action btn-dirty"
+                  *ngIf="r.housekeepingStatus !== HousekeepingStatus.Dirty"
+                  [title]="'Manager:Room:MarkDirty' | abpLocalization"
+                  (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Dirty)">
+                  <i class="fa-solid fa-broom"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-action btn-inspect"
+                  *ngIf="r.housekeepingStatus !== HousekeepingStatus.Inspected"
+                  [title]="'Manager:Room:MarkInspected' | abpLocalization"
+                  (click)="quickUpdateHousekeeping(r, HousekeepingStatus.Inspected)">
+                  <i class="fa-solid fa-stamp"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="floorGroups().length === 0" class="empty-state text-center py-5">
+        <i class="fa-solid fa-door-closed fa-3x text-muted mb-2"></i>
+        <p class="text-muted">{{ 'Common:NoData' | abpLocalization }}</p>
+      </div>
+    </div>
+
+    <!-- TAB 2: Danh mục loại phòng (Room Types) -->
+    <div *ngIf="activeTab() === 'types'" class="types-tab-content">
+      <div class="toolbar-card d-flex justify-content-between align-items-center mb-3">
+        <span class="fw-bold">{{ 'Manager:Room:TotalTypes' | abpLocalization }}: {{ roomTypes().length }}</span>
+        <button type="button" class="btn btn-primary btn-sm" (click)="openTypeModal()">
+          <i class="fa-solid fa-plus me-1"></i> {{ 'Manager:Room:CreateRoomType' | abpLocalization }}
+        </button>
+      </div>
+
+      <div class="table-responsive bg-white rounded-3 border">
+        <table class="table modern-table mb-0">
+          <thead>
+            <tr>
+              <th class="col-name">{{ 'Manager:Room:TypeName' | abpLocalization }}</th>
+              <th class="col-price">{{ 'Manager:Room:BasePrice' | abpLocalization }}</th>
+              <th class="col-occupancy">{{ 'Manager:Room:StandardOccupancy' | abpLocalization }}</th>
+              <th class="col-size">{{ 'Manager:Room:SizeSquareMeters' | abpLocalization }}</th>
+              <th class="col-rooms">{{ 'Manager:Room:TotalRoomCount' | abpLocalization }}</th>
+              <th class="col-amenities">{{ 'Manager:Room:Amenities' | abpLocalization }}</th>
+              <th class="col-actions text-end">{{ 'Common:Actions' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of roomTypes()">
+              <td class="col-name fw-bold text-primary">{{ t.name }}</td>
+              <td class="col-price font-weight-semibold">{{ t.basePrice | number:'1.0-0' }} VNĐ</td>
+              <td class="col-occupancy">{{ t.standardOccupancy }} - {{ t.maxOccupancy }} {{ 'Manager:Room:GuestsUnit' | abpLocalization }}</td>
+              <td class="col-size">{{ t.sizeSquareMeters }} m²</td>
+              <td class="col-rooms">
+                <span class="badge bg-light text-dark border">{{ t.totalRoomCount }} {{ 'Manager:Room:RoomsUnit' | abpLocalization }}</span>
+              </td>
+              <td class="col-amenities">
+                <div class="amenities-tags">
+                  <span *ngFor="let am of t.amenities.slice(0, 2)" class="mini-tag">{{ getAmenityLabel(am) }}</span>
+                  <span *ngIf="t.amenities.length > 2" class="mini-tag tag-more">+{{ t.amenities.length - 2 }}</span>
+                </div>
+              </td>
+              <td class="col-actions text-end">
+                <div class="action-buttons-wrap">
+                  <button type="button" class="btn btn-sm btn-outline-primary btn-action-icon" [title]="'Common:Edit' | abpLocalization" (click)="openTypeModal(t)">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-action-icon" [title]="'Common:Delete' | abpLocalization" (click)="deleteRoomType(t)">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="roomTypes().length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">
+                {{ 'Common:NoData' | abpLocalization }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: Lịch sử đóng phòng & Nghiệm thu khôi phục (RM-010 US5) -->
+    <div *ngIf="activeTab() === 'closures'" class="closures-tab-content">
+      <div class="toolbar-card mb-3">
+        <span class="fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i>{{ 'RoomManagement:ClosureHistory' | abpLocalization }} ({{ closures().length }})</span>
+      </div>
+
+      <div class="table-responsive bg-white rounded-3 border">
+        <table class="table modern-table mb-0">
+          <thead>
+            <tr>
+              <th>Loại Đóng Phòng</th>
+              <th>Số Phòng</th>
+              <th>Lý Do Sự Cố</th>
+              <th>Bắt Đầu</th>
+              <th>Kết Thúc / Dự Kiến</th>
+              <th>Trạng Thái</th>
+              <th>Booking Bị Ảnh Hưởng</th>
+              <th class="text-end">{{ 'Common:Actions' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of closures()">
+              <td>
+                <span class="badge" [ngClass]="c.closureType === RoomClosureType.Emergency ? 'bg-danger' : 'bg-warning text-dark'">
+                  {{ c.closureType === RoomClosureType.Emergency ? 'Khẩn cấp (Emergency)' : 'Theo kế hoạch (Planned)' }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ c.roomNumber }}</td>
+              <td>
+                <div>{{ c.reason }}</div>
+                <small class="text-muted" *ngIf="c.incidentDescription">{{ c.incidentDescription }}</small>
+              </td>
+              <td>{{ c.startDate | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ ((c.endDate || c.estimatedRecoveryTime) | date:'dd/MM/yyyy HH:mm') || '—' }}</td>
+              <td>
+                <span class="badge" [ngClass]="c.status === RoomClosureStatus.Active ? 'bg-danger' : 'bg-success'">
+                  {{ c.status === RoomClosureStatus.Active ? 'Đang đóng phòng' : 'Đã khôi phục' }}
+                </span>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info"
+                  *ngIf="c.resolutions && c.resolutions.length > 0"
+                  (click)="openResolutionModal(c)">
+                  <i class="fa-solid fa-people-arrows me-1"></i> {{ c.resolutions.length }} booking
+                </button>
+                <span *ngIf="!c.resolutions || c.resolutions.length === 0" class="text-muted">—</span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-success"
+                  *ngIf="c.status === RoomClosureStatus.Active"
+                  (click)="openRecoveryModal(c)">
+                  <i class="fa-solid fa-check me-1"></i> {{ 'RoomManagement:ConfirmRecovery' | abpLocalization }}
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="closures().length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                {{ 'Common:NoData' | abpLocalization }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Modal Đổi trạng thái vận hành phòng -->
+  <bh-room-status-modal
+    [isOpen]="isStatusModalOpen()"
+    [room]="selectedRoomForStatus()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    (closed)="isStatusModalOpen.set(false)"
+    (statusChanged)="onRoomStatusChanged($event)">
+  </bh-room-status-modal>
+
+  <!-- Modal Quản lý loại phòng -->
+  <bh-room-type-modal
+    [isOpen]="isTypeModalOpen()"
+    [roomType]="selectedRoomType()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    (closed)="isTypeModalOpen.set(false)"
+    (saved)="onRoomTypeSaved($event)">
+  </bh-room-type-modal>
+
+  <!-- Modal Thêm / Sửa phòng thực tế -->
+  <div class="modal-backdrop" *ngIf="isAddRoomModalOpen()">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ (editingRoomId() ? 'Manager:Room:EditRoom' : 'Manager:Room:AddRoom') | abpLocalization }}</h5>
+          <button type="button" class="btn-close" (click)="closeRoomModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">{{ 'Manager:Room:Number' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="newRoomNumber" placeholder="Ví dụ: 304, 401..." />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Manager:Room:Floor' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" [(ngModel)]="newRoomFloor" min="1" max="200" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'RoomManagement:Building' | abpLocalization }}</label>
+            <input type="text" class="form-control" [(ngModel)]="newRoomBuilding" [placeholder]="'RoomManagement:BuildingPlaceholder' | abpLocalization" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Manager:Room:Type' | abpLocalization }} <span class="text-danger">*</span></label>
+            <bh-searchable-select
+              [(ngModel)]="newRoomTypeId"
+              [options]="roomTypeOptions()"
+              [placeholder]="roomTypes().length === 0 ? ('Manager:Room:NoRoomTypesAvailable' | abpLocalization) : ('Manager:Room:SelectRoomType' | abpLocalization)"
+              [emptyText]="'Manager:Room:NoRoomTypesAvailable' | abpLocalization"
+              [searchable]="roomTypes().length > 5"
+              [clearable]="false"
+            ></bh-searchable-select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'RoomManagement:Description' | abpLocalization }}</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="newRoomDescription" placeholder="Mô tả đặc điểm phòng..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeRoomModal()">{{ 'Common:Cancel' | abpLocalization }}</button>
+          <button type="button" class="btn btn-primary" [disabled]="!newRoomNumber || !newRoomTypeId || isSavingRoom()" (click)="saveRoom()">
+            <i class="fa-solid fa-spinner fa-spin me-1" *ngIf="isSavingRoom()"></i>
+            {{ 'Common:Save' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lập lịch Planned Closure (RM-010 US3) -->
+  <div class="modal-backdrop" *ngIf="isPlannedClosureModalOpen()">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-calendar-xmark text-warning me-2"></i>{{ 'RoomManagement:PlannedClosure' | abpLocalization }}</h5>
+          <button type="button" class="btn-close" (click)="closePlannedClosureModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ 'Common:FromDate' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" [(ngModel)]="plannedStartDate" (ngModelChange)="onPlannedDatesOrRoomsChange()" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ 'Common:ToDate' | abpLocalization }} <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" [(ngModel)]="plannedEndDate" (ngModelChange)="onPlannedDatesOrRoomsChange()" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'RoomManagement:Reason' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="plannedReason" placeholder="Ví dụ: Sơn sửa phòng, bảo dưỡng điều hòa định kỳ..." />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Chọn danh sách phòng cần đóng <span class="text-danger">*</span></label>
+            <div class="room-selector-pills">
+              <button
+                type="button"
+                *ngFor="let r of rooms()"
+                class="room-pill-btn"
+                [class.selected]="plannedRoomIds().includes(r.id)"
+                (click)="togglePlannedRoom(r.id)">
+                {{ r.roomNumber }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Conflicting Bookings -->
+          <div class="alert alert-info mt-3" *ngIf="isCheckingAffected()">
+            <i class="fa-solid fa-spinner fa-spin me-2"></i> {{ 'RoomManagement:CheckAffectedBookings' | abpLocalization }}...
+          </div>
+
+          <div class="alert alert-success mt-3" *ngIf="!isCheckingAffected() && affectedBookingsPreview().length === 0 && plannedRoomIds().length > 0">
+            <i class="fa-solid fa-circle-check me-2"></i> {{ 'RoomManagement:NoConflictFound' | abpLocalization }}
+          </div>
+
+          <div class="alert alert-warning mt-3" *ngIf="!isCheckingAffected() && affectedBookingsPreview().length > 0">
+            <div class="fw-bold mb-2">
+              <i class="fa-solid fa-triangle-exclamation me-2"></i>
+              Cảnh báo: Có {{ affectedBookingsPreview().length }} booking bị ảnh hưởng giao cắt thời gian!
+            </div>
+            <ul class="mb-0 ps-3">
+              <li *ngFor="let b of affectedBookingsPreview()">
+                <strong>#{{ b.bookingCode }}</strong>: {{ b.customerName }} (Phòng {{ b.roomNumber }}) lưu trú từ {{ b.checkInDate | date:'dd/MM' }} đến {{ b.checkOutDate | date:'dd/MM' }}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closePlannedClosureModal()">{{ 'Common:Cancel' | abpLocalization }}</button>
+          <button
+            type="button"
+            class="btn btn-warning"
+            [disabled]="plannedRoomIds().length === 0 || !plannedReason.trim() || !plannedStartDate || !plannedEndDate || isSavingPlannedClosure()"
+            (click)="savePlannedClosure()">
+            <i class="fa-solid fa-spinner fa-spin me-1" *ngIf="isSavingPlannedClosure()"></i>
+            Xác nhận Lập Lịch Đóng Phòng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Khóa Phòng Khẩn Cấp (RM-010 US4) -->
+  <div class="modal-backdrop" *ngIf="isEmergencyClosureModalOpen()">
+    <div class="modal-dialog modal-lg border-danger">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ 'RoomManagement:EmergencyClosure' | abpLocalization }}</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeEmergencyClosureModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-shield-halved me-2"></i>
+            <strong>CẢNH BÁO QUAN TRỌNG:</strong> Khi kích hoạt, hệ thống sẽ lập tức chuyển phòng sang trạng thái <strong>Out of Service</strong>, chặn toàn bộ đặt phòng mới và tự động gửi email cảnh báo tới toàn bộ khách hàng có booking bị ảnh hưởng.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'RoomManagement:Reason' | abpLocalization }} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="emergencyReason" placeholder="Ví dụ: Vỡ đường ống nước, chập cháy điện, nứt trần..." />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'RoomManagement:IncidentDescription' | abpLocalization }} <span class="text-danger">*</span></label>
+            <textarea class="form-control" rows="3" [(ngModel)]="emergencyDescription" placeholder="Mô tả chi tiết nguyên nhân, vị trí hư hại và phương án khắc phục sơ bộ..."></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Thời điểm bắt đầu sự cố <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" [(ngModel)]="emergencyStartDate" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ 'RoomManagement:EstimatedRecoveryTime' | abpLocalization }}</label>
+              <input type="date" class="form-control" [(ngModel)]="emergencyEstimatedRecovery" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Chọn các phòng gặp sự cố khẩn cấp <span class="text-danger">*</span></label>
+            <div class="room-selector-pills">
+              <button
+                type="button"
+                *ngFor="let r of rooms()"
+                class="room-pill-btn emergency-pill"
+                [class.selected]="emergencyRoomIds().includes(r.id)"
+                (click)="toggleEmergencyRoom(r.id)">
+                {{ r.roomNumber }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeEmergencyClosureModal()">{{ 'Common:Cancel' | abpLocalization }}</button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            [disabled]="emergencyRoomIds().length === 0 || !emergencyReason.trim() || !emergencyDescription.trim() || isSavingEmergencyClosure()"
+            (click)="saveEmergencyClosure()">
+            <i class="fa-solid fa-spinner fa-spin me-1" *ngIf="isSavingEmergencyClosure()"></i>
+            Kích Hoạt Khóa Khẩn Cấp & Gửi Cảnh Báo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Điều Phối Xử Lý Sự Cố Đặt Phòng (RM-010 US4) -->
+  <div class="modal-backdrop" *ngIf="isResolutionModalOpen()">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-people-arrows text-info me-2"></i>{{ 'RoomManagement:ResolutionTitle' | abpLocalization }}</h5>
+          <button type="button" class="btn-close" (click)="closeResolutionModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <!-- Cột trái: Danh sách booking sự cố -->
+            <div class="col-md-5 border-end">
+              <div class="fw-bold mb-2">Danh Sách Booking Sự Cố ({{ activeClosureForResolution()?.resolutions?.length }})</div>
+              <div class="list-group resolution-booking-list">
+                <button
+                  type="button"
+                  *ngFor="let res of activeClosureForResolution()?.resolutions"
+                  class="list-group-item list-group-item-action"
+                  [class.active]="selectedBookingForResolution()?.id === res.id"
+                  (click)="selectBookingForResolution(res)">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">#{{ res.bookingCode }}</span>
+                    <span class="badge" [ngClass]="res.resolutionType ? 'bg-success' : 'bg-warning text-dark'">
+                      {{ res.resolutionType ? 'Đã giải quyết' : 'Chờ xử lý' }}
+                    </span>
+                  </div>
+                  <div>{{ res.customerName }} (Phòng {{ res.roomNumber }})</div>
+                  <small class="text-muted d-block">{{ res.customerEmail }}</small>
+                  <small class="text-info d-block" *ngIf="res.isCustomerNotified">
+                    <i class="fa-solid fa-envelope-circle-check me-1"></i> {{ 'RoomManagement:CustomerNotified' | abpLocalization }}
+                  </small>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cột phải: Form điều phối phương án -->
+            <div class="col-md-7 ps-md-4" *ngIf="selectedBookingForResolution()">
+              <div class="fw-bold mb-3 text-primary">Phương Án Giải Quyết Cho Đơn #{{ selectedBookingForResolution()?.bookingCode }}</div>
+
+              <div class="mb-3">
+                <label class="form-label">{{ 'RoomManagement:ResolutionType' | abpLocalization }} <span class="text-danger">*</span></label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" id="resChange" [value]="AffectedBookingResolutionType.RoomChange" [ngModel]="resolutionType()" (ngModelChange)="onResolutionTypeChange($event)">
+                  <label class="btn btn-outline-primary" for="resChange">{{ 'RoomManagement:Resolution:RoomChange' | abpLocalization }}</label>
+
+                  <input type="radio" class="btn-check" id="resUpgrade" [value]="AffectedBookingResolutionType.RoomUpgrade" [ngModel]="resolutionType()" (ngModelChange)="onResolutionTypeChange($event)">
+                  <label class="btn btn-outline-success" for="resUpgrade">{{ 'RoomManagement:Resolution:RoomUpgrade' | abpLocalization }}</label>
+
+                  <input type="radio" class="btn-check" id="resRefund" [value]="AffectedBookingResolutionType.Refund" [ngModel]="resolutionType()" (ngModelChange)="onResolutionTypeChange($event)">
+                  <label class="btn btn-outline-danger" for="resRefund">{{ 'RoomManagement:Resolution:Refund' | abpLocalization }}</label>
+
+                  <input type="radio" class="btn-check" id="resOther" [value]="AffectedBookingResolutionType.OtherResolution" [ngModel]="resolutionType()" (ngModelChange)="onResolutionTypeChange($event)">
+                  <label class="btn btn-outline-secondary" for="resOther">{{ 'RoomManagement:Resolution:Other' | abpLocalization }}</label>
+                </div>
+              </div>
+
+              <!-- Gợi ý 1-click phòng thay thế -->
+              <div class="mb-3" *ngIf="resolutionType() === AffectedBookingResolutionType.RoomChange || resolutionType() === AffectedBookingResolutionType.RoomUpgrade">
+                <label class="form-label">{{ 'RoomManagement:SuggestAlternativeRoom' | abpLocalization }} <span class="text-danger">*</span></label>
+                <select class="form-select" [ngModel]="selectedAlternativeRoomId()" (ngModelChange)="selectedAlternativeRoomId.set($event)">
+                  <option [ngValue]="null">{{ 'RoomManagement:SelectAlternativeRoom' | abpLocalization }}</option>
+                  <option *ngFor="let alt of alternativeRooms()" [ngValue]="alt.roomId">
+                    Phòng {{ alt.roomNumber }} (Tầng {{ alt.floor }}) - {{ alt.roomTypeName }} ({{ alt.basePrice | number:'1.0-0' }} VNĐ) {{ alt.isUpgrade ? '⭐ NÂNG HẠNG' : '' }}
+                  </option>
+                </select>
+                <div class="form-text text-muted" *ngIf="alternativeRooms().length === 0">
+                  <i class="fa-solid fa-circle-info me-1"></i> Hiện không có phòng trống khả dụng thỏa mãn tiêu chí này.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">{{ 'RoomManagement:Notes' | abpLocalization }}</label>
+                <textarea class="form-control" rows="3" [(ngModel)]="resolutionNotes" placeholder="Nhập chi tiết phương án thỏa thuận với khách..."></textarea>
+              </div>
+
+              <div class="text-end">
+                <button type="button" class="btn btn-primary" [disabled]="isSavingResolution()" (click)="saveResolution()">
+                  <i class="fa-solid fa-spinner fa-spin me-1" *ngIf="isSavingResolution()"></i>
+                  Lưu Phương Án Xử Lý
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeResolutionModal()">{{ 'Common:Close' | abpLocalization }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nghiệm Thu Khôi Phục Phòng (RM-010 US5) -->
+  <div class="modal-backdrop" *ngIf="isRecoveryModalOpen()">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-check-double text-success me-2"></i>{{ 'RoomManagement:ConfirmRecoveryTitle' | abpLocalization }}</h5>
+          <button type="button" class="btn-close" (click)="closeRecoveryModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>Xác nhận phòng <strong>{{ closureForRecovery()?.roomNumber }}</strong> đã được khắc phục hoàn toàn sự cố và đủ điều kiện đưa vào hoạt động kinh doanh bình thường?</p>
+          <div class="mb-3">
+            <label class="form-label">Ghi chú nghiệm thu</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="recoveryNotes" placeholder="Ví dụ: Đã thay thế ống nước mới, phòng đã được dọn sạch và kiểm tra chất lượng..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeRecoveryModal()">{{ 'Common:Cancel' | abpLocalization }}</button>
+          <button type="button" class="btn btn-success" [disabled]="isSavingRecovery()" (click)="confirmRecovery()">
+            <i class="fa-solid fa-spinner fa-spin me-1" *ngIf="isSavingRecovery()"></i>
+            Xác Nhận Khôi Phục
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

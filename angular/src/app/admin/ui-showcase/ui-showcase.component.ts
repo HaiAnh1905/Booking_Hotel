@@ -63,18 +63,12 @@ export class UiShowcaseComponent {
     { field: 'actions', headerKey: 'Common:Actions', align: 'right', width: '120px' },
   ];
 
-  sampleData = signal<SampleAccount[]>([
-    { id: 'USR-01', fullName: 'Quản Trị Viên Hệ Thống', email: 'admin@bookinghotel.com', role: 'System Admin', status: 'active' },
-    { id: 'USR-02', fullName: 'Trần Thị Giám Đốc', email: 'manager@vinpearl.com', role: 'Hotel Manager', status: 'active' },
-    { id: 'USR-03', fullName: 'Lê Văn Lễ Tân', email: 'reception@hanoiplaza.com', role: 'Receptionist', status: 'active' },
-    { id: 'USR-04', fullName: 'Nguyễn Khách Hàng', email: 'customer@gmail.com', role: 'Customer', status: 'active' },
-    { id: 'USR-05', fullName: 'Tài Khoản Tạm Khóa', email: 'locked_user@domain.com', role: 'Customer', status: 'locked' },
-  ]);
+  sampleData = signal<SampleAccount[]>([]);
 
   paginationState: BhPaginationState = {
     currentPage: 1,
     pageSize: 5,
-    totalCount: 5,
+    totalCount: 0,
     sortField: 'fullName',
     sortDirection: 'asc',
   };
@@ -116,3 +110,4 @@ export class UiShowcaseComponent {
     }, 1500);
   }
 }
+

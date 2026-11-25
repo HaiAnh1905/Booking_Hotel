@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService, LocalizationPipe } from '@abp/ng.core';
+import { AuthService, ConfigStateService, LocalizationPipe } from '@abp/ng.core';
+import { OAuthStorage } from 'angular-oauth2-oidc';
+import { getDefaultUrlForRoles, getUserRoles } from '../../admin/guards/role-based-redirect.guard';
 import { BhLanguageSwitcherComponent } from '../../shared/components/language-switcher/bh-language-switcher.component';
 
 @Component({
@@ -14,6 +16,8 @@ import { BhLanguageSwitcherComponent } from '../../shared/components/language-sw
 })
 export class CustomerLayoutComponent {
   private authService = inject(AuthService);
+  private oAuthStorage = inject(OAuthStorage);
+  private configState = inject(ConfigStateService);
 
   currentYear = new Date().getFullYear();
   isMobileMenuOpen = signal<boolean>(false);
@@ -21,6 +25,38 @@ export class CustomerLayoutComponent {
 
   get isAuthenticated(): boolean {
     return this.authService.isAuthenticated;
+  }
+
+  get currentUser(): any {
+    return this.configState.getOne('currentUser');
+  }
+
+  get userDisplayName(): string {
+    const user = this.currentUser;
+    return user?.name || user?.userName || user?.email || '';
+  }
+
+  get userRoles(): string[] {
+    if (!this.isAuthenticated) return [];
+    return getUserRoles(this.oAuthStorage, this.configState);
+  }
+
+  /**
+   * Chỉ cho phép truy cập mục Quản trị khi người dùng đăng nhập và có vai trò quản lý (không phải Customer thuần túy)
+   */
+  get hasManagementRole(): boolean {
+    if (!this.isAuthenticated) return false;
+    const roles = this.userRoles;
+    return roles.some(r =>
+      ['SystemAdmin', 'admin', 'TenantAdmin', 'HotelManager', 'Receptionist'].includes(r)
+    );
+  }
+
+  /**
+   * Phân luồng chính xác về Dashboard phù hợp với vai trò của nhân sự
+   */
+  get managementPortalUrl(): string {
+    return getDefaultUrlForRoles(this.userRoles);
   }
 
   toggleMobileMenu() {

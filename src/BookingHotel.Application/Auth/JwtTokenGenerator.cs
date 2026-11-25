@@ -4,10 +4,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using BookingHotel.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Claims;
 
 namespace BookingHotel.Auth;
 
@@ -15,11 +19,16 @@ public class JwtTokenGenerator : ITokenGenerator, ITransientDependency
 {
     private readonly IConfiguration _configuration;
     private readonly IdentityUserManager _userManager;
+    private readonly ICurrentTenant _currentTenant;
 
-    public JwtTokenGenerator(IConfiguration configuration, IdentityUserManager userManager)
+    public JwtTokenGenerator(
+        IConfiguration configuration,
+        IdentityUserManager userManager,
+        ICurrentTenant currentTenant)
     {
         _configuration = configuration;
         _userManager = userManager;
+        _currentTenant = currentTenant;
     }
 
     public async Task<(string Token, int ExpiresIn)> GenerateTokenAsync(IdentityUser user, bool rememberMe = false)
@@ -37,16 +46,38 @@ public class JwtTokenGenerator : ITokenGenerator, ITransientDependency
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            new(JwtRegisteredClaimNames.Name, user.Name ?? user.UserName),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(AbpClaimTypes.UserId, user.Id.ToString()),
+            new(AbpClaimTypes.UserName, user.UserName ?? string.Empty),
+            new(AbpClaimTypes.Name, user.Name ?? user.UserName ?? string.Empty),
+            new(AbpClaimTypes.Email, user.Email ?? string.Empty),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("remember_me", rememberMe ? "true" : "false")
         };
 
-        var roles = await _userManager.GetRolesAsync(user);
+        if (user.TenantId.HasValue)
+        {
+            claims.Add(new Claim(AbpClaimTypes.TenantId, user.TenantId.Value.ToString()));
+        }
+
+        var shouldChangePassword = user.GetProperty<bool>(BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty);
+        claims.Add(new Claim("should_change_password", shouldChangePassword ? "true" : "false"));
+
+        IList<string> roles;
+        using (_currentTenant.Change(user.TenantId))
+        {
+            roles = await _userManager.GetRolesAsync(user);
+        }
+
         foreach (var role in roles)
         {
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(AbpClaimTypes.Role, role));
+        }
+
+        // Nếu là tài khoản quản trị trực thuộc Tenant (có role 'admin' của Tenant),
+        // bổ sung thêm Role Claim 'TenantAdmin' để phân hệ UI / Guard nhận diện chính xác
+        if (user.TenantId.HasValue && roles.Contains("admin") && !roles.Contains(BookingHotelRoleConsts.TenantAdmin))
+        {
+            claims.Add(new Claim(AbpClaimTypes.Role, BookingHotelRoleConsts.TenantAdmin));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey.PadRight(32)));

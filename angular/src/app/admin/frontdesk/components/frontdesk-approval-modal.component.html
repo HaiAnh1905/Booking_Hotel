@@ -1,0 +1,74 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="{
+    titleKey: 'RoomRack:ExceptionModalTitle',
+    confirmTextKey: 'RoomRack:ExceptionModalSend',
+    cancelTextKey: 'Common:Cancel',
+    confirmVariant: 'primary'
+  }"
+  (confirm)="onSubmit()"
+  (cancel)="onCancel()">
+  <div class="approval-modal-content">
+    <div class="info-alert">
+      <i class="fa-solid fa-circle-info info-icon"></i>
+      <div class="info-text">
+        <span>{{ 'RoomRack:ExceptionNotice' | abpLocalization: roomNumber }}</span>
+      </div>
+    </div>
+
+    <form class="ticket-form" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="ticketType" class="form-label">{{ 'RoomRack:TicketTypeLabel' | abpLocalization }} <span class="text-danger">*</span></label>
+        <select 
+          id="ticketType" 
+          class="form-select" 
+          [ngModel]="ticketType()" 
+          (ngModelChange)="ticketType.set($event)" 
+          name="ticketType">
+          <option *ngFor="let t of ticketTypes" [value]="t.value">{{ t.labelKey | abpLocalization }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" *ngIf="ticketType() === 1">
+          <label for="discountPercent" class="form-label">{{ 'RoomRack:DiscountPercentLabel' | abpLocalization }} <span class="text-danger">*</span></label>
+          <input 
+            type="number" 
+            id="discountPercent" 
+            class="form-control" 
+            [ngModel]="discountPercent()" 
+            (ngModelChange)="discountPercent.set($event)" 
+            name="discountPercent"
+            min="1" 
+            max="100" 
+            placeholder="15" />
+        </div>
+
+        <div class="form-group" *ngIf="ticketType() === 2 || ticketType() === 1">
+          <label for="amount" class="form-label">{{ 'RoomRack:AmountLabel' | abpLocalization }}</label>
+          <input 
+            type="number" 
+            id="amount" 
+            class="form-control" 
+            [ngModel]="amount()" 
+            (ngModelChange)="amount.set($event)" 
+            name="amount"
+            placeholder="300000" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reason" class="form-label">{{ 'RoomRack:ReasonLabel' | abpLocalization }} <span class="text-danger">*</span></label>
+        <textarea 
+          id="reason" 
+          class="form-control" 
+          rows="3" 
+          [ngModel]="reason()" 
+          (ngModelChange)="reason.set($event)" 
+          name="reason"
+          [placeholder]="'RoomRack:ReasonPlaceholder' | abpLocalization">
+        </textarea>
+      </div>
+    </form>
+  </div>
+</bh-modal>

@@ -1,5 +1,6 @@
 using BookingHotel.Identity;
 using BookingHotel.Permissions;
+using BookingHotel.Approvals;
 using Xunit;
 
 namespace BookingHotel.EntityFrameworkCore.Applications;
@@ -16,5 +17,15 @@ public class EfCoreUserHotelAssignmentTests : UserHotelAssignmentTests<BookingHo
 
 [Collection(BookingHotelTestConsts.CollectionDefinitionName)]
 public class EfCorePermissionSecurityTests : BookingHotelPermissionSecurityTests<BookingHotelEntityFrameworkCoreTestModule>
+{
+}
+
+[Collection(BookingHotelTestConsts.CollectionDefinitionName)]
+public class EfCoreIdentityUserManagementAppServiceTests : IdentityUserManagementAppServiceTests<BookingHotelEntityFrameworkCoreTestModule>
+{
+}
+
+[Collection(BookingHotelTestConsts.CollectionDefinitionName)]
+public class EfCoreOperationalApprovalAppServiceTests : OperationalApprovalAppServiceTests<BookingHotelEntityFrameworkCoreTestModule>
 {
 }

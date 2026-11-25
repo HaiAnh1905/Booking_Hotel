@@ -36,9 +36,14 @@ export class ManagementLayoutComponent {
       badgeVariant: 'accent',
     },
     {
-      route: '/identity/roles',
-      labelKey: 'Menu:StaffAndRoles',
+      route: '/admin/users',
+      labelKey: 'Identity:Title',
       icon: 'fa-solid fa-users-gear',
+    },
+    {
+      route: '/admin/roles',
+      labelKey: 'Identity:RoleListTitle',
+      icon: 'fa-solid fa-shield-halved',
     },
     {
       route: '/tenant-management',
@@ -72,3 +77,4 @@ export class ManagementLayoutComponent {
     this.router.navigateByUrl(route);
   }
 }
+

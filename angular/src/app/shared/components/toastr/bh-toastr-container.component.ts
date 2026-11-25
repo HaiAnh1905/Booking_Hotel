@@ -57,3 +57,4 @@ import { BhToastrService } from './bh-toastr.service';
 export class BhToastrContainerComponent {
   toastrService = inject(BhToastrService);
 }
+

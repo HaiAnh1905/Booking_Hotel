@@ -1,0 +1,324 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="modalConfig"
+  [busy]="busy"
+  (cancel)="onCancel()"
+  (confirm)="onConfirm()"
+>
+  <form [formGroup]="form" *ngIf="form" class="user-form" novalidate>
+    <div class="row g-3">
+      <!-- Tên tài khoản (Display Name) -->
+      <div class="col-md-6">
+        <label for="userName" class="form-label">
+          {{ 'Identity:UserName' | abpLocalization }} <span class="required">*</span>
+        </label>
+        <input
+          id="userName"
+          type="text"
+          formControlName="userName"
+          class="form-control"
+          [placeholder]="'Identity:UserNamePlaceholder' | abpLocalization"
+          autocomplete="off"
+          [class.is-invalid]="form.get('userName')?.touched && form.get('userName')?.invalid"
+        />
+        <div *ngIf="form.get('userName')?.touched && form.get('userName')?.hasError('required')" class="invalid-feedback d-block">
+          {{ 'Identity:UserNameRequired' | abpLocalization }}
+        </div>
+        <div *ngIf="form.get('userName')?.touched && form.get('userName')?.hasError('minlength')" class="invalid-feedback d-block">
+          {{ 'Identity:UserNameMinLength' | abpLocalization }}
+        </div>
+      </div>
+
+      <!-- Địa chỉ Email -->
+      <div class="col-md-6">
+        <label for="email" class="form-label">
+          {{ 'Identity:Email' | abpLocalization }} <span class="required">*</span>
+        </label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="form-control"
+          placeholder="vd: an.nguyen@hotel.com"
+          autocomplete="off"
+          [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid"
+        />
+        <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="invalid-feedback">
+          {{ 'Identity:EmailInvalid' | abpLocalization }}
+        </div>
+      </div>
+
+      <!-- Họ & Tên -->
+      <div class="col-md-6">
+        <label for="surname" class="form-label">{{ 'Identity:LastName' | abpLocalization }}</label>
+        <input
+          id="surname"
+          type="text"
+          formControlName="surname"
+          class="form-control"
+          [placeholder]="'Identity:SurnamePlaceholder' | abpLocalization"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label for="name" class="form-label">{{ 'Identity:FirstName' | abpLocalization }}</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          class="form-control"
+          [placeholder]="'Identity:NamePlaceholder' | abpLocalization"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Số điện thoại -->
+      <div class="col-md-6">
+        <label for="phoneNumber" class="form-label">{{ 'Identity:PhoneNumber' | abpLocalization }}</label>
+        <input
+          id="phoneNumber"
+          type="tel"
+          formControlName="phoneNumber"
+          class="form-control"
+          placeholder="vd: 0912345678"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Trạng thái hoạt động (khi sửa) -->
+      <div class="col-md-6 d-flex align-items-center" *ngIf="isEditMode">
+        <div class="form-check form-switch mt-4">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="isActiveSwitch"
+            formControlName="isActive"
+          />
+          <label class="form-check-label ms-2" for="isActiveSwitch">
+            {{ 'Identity:Active' | abpLocalization }}
+          </label>
+        </div>
+      </div>
+
+      <!-- Mật khẩu khởi tạo (chỉ khi tạo mới) -->
+      <div class="col-12" *ngIf="!isEditMode">
+        <label for="modalPassword" class="form-label">
+          {{ 'Identity:Password' | abpLocalization }} <span class="required">*</span>
+        </label>
+        <input
+          id="modalPassword"
+          type="password"
+          formControlName="password"
+          class="form-control"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          [class.is-invalid]="form.get('password')?.touched && form.get('password')?.invalid"
+        />
+        <small class="text-muted d-block mt-1">
+          <i class="fa-solid fa-circle-info text-info me-1"></i>
+          {{ 'Identity:PasswordNotice' | abpLocalization }}
+        </small>
+
+        <!-- Checklist tiêu chuẩn mật khẩu -->
+        <div class="password-checklist mt-2">
+          <div class="criterion" [class.passed]="passwordCriteria.hasMinLength">
+            <i class="fa-solid" [ngClass]="passwordCriteria.hasMinLength ? 'fa-check' : 'fa-circle-xmark'"></i>
+            <span>{{ 'Auth:PasswordRuleMinLength' | abpLocalization }}</span>
+          </div>
+          <div class="criterion" [class.passed]="passwordCriteria.hasUpperCase">
+            <i class="fa-solid" [ngClass]="passwordCriteria.hasUpperCase ? 'fa-check' : 'fa-circle-xmark'"></i>
+            <span>{{ 'Auth:PasswordRuleUpperCase' | abpLocalization }}</span>
+          </div>
+          <div class="criterion" [class.passed]="passwordCriteria.hasLowerCase">
+            <i class="fa-solid" [ngClass]="passwordCriteria.hasLowerCase ? 'fa-check' : 'fa-circle-xmark'"></i>
+            <span>{{ 'Auth:PasswordRuleLowerCase' | abpLocalization }}</span>
+          </div>
+          <div class="criterion" [class.passed]="passwordCriteria.hasNumeric">
+            <i class="fa-solid" [ngClass]="passwordCriteria.hasNumeric ? 'fa-check' : 'fa-circle-xmark'"></i>
+            <span>{{ 'Auth:PasswordRuleDigit' | abpLocalization }}</span>
+          </div>
+          <div class="criterion" [class.passed]="passwordCriteria.hasSpecial">
+            <i class="fa-solid" [ngClass]="passwordCriteria.hasSpecial ? 'fa-check' : 'fa-circle-xmark'"></i>
+            <span>{{ 'Auth:PasswordRuleSpecial' | abpLocalization }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vai trò được phân quyền -->
+      <div class="col-12">
+        <label class="form-label">
+          {{ 'Identity:Roles' | abpLocalization }} <span class="required">*</span>
+        </label>
+        <div class="roles-wrapper d-flex flex-wrap gap-2">
+          <label
+            *ngFor="let role of availableRoles"
+            class="role-pill"
+            [class.active]="isRoleChecked(role)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isRoleChecked(role)"
+              (change)="onRoleChange(role, $event)"
+              class="d-none"
+            />
+            <i class="fa-solid fa-shield-halved me-1"></i>
+            <span>{{ ('Role:' + role) | abpLocalization }}</span>
+          </label>
+        </div>
+        <div *ngIf="form.get('roleNames')?.touched && form.get('roleNames')?.invalid" class="invalid-feedback d-block">
+          {{ 'Identity:SelectAtLeastOneRole' | abpLocalization }}
+        </div>
+      </div>
+
+      <!-- Phân bổ Chi Nhánh Khách Sạn -->
+      <div class="col-12" *ngIf="isReceptionistSelected || isHotelManagerSelected">
+        <label class="form-label">
+          {{ 'Identity:AssignedHotels' | abpLocalization }}
+        </label>
+
+        <!-- Thông báo khi chưa có cơ sở nào trong chuỗi -->
+        <div *ngIf="!availableHotels || availableHotels.length === 0" class="alert alert-warning py-2 px-3 small d-flex align-items-center mb-2">
+          <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>
+          <span>{{ 'Identity:NoHotelsAvailableNotice' | abpLocalization }}</span>
+        </div>
+
+        <ng-container *ngIf="availableHotels && availableHotels.length > 0">
+          <!-- Thông báo theo vai trò -->
+          <div *ngIf="isReceptionistOnly" class="alert alert-info py-2 px-3 small d-flex align-items-center mb-2">
+            <i class="fa-solid fa-lock me-2 text-cyan"></i>
+            <span>{{ 'Identity:ReceptionistSingleHotelNotice' | abpLocalization }}</span>
+          </div>
+          <div *ngIf="isDualManagerAndReceptionist" class="alert alert-primary py-2 px-3 small d-flex align-items-center mb-2">
+            <i class="fa-solid fa-user-check me-2 text-primary"></i>
+            <span>{{ 'Identity:DualManagerReceptionistNotice' | abpLocalization }}</span>
+          </div>
+          <div *ngIf="isHotelManagerSelected && !isReceptionistSelected" class="alert alert-secondary py-2 px-3 small d-flex align-items-center mb-2">
+            <i class="fa-solid fa-network-wired me-2 text-info"></i>
+            <span>{{ 'Identity:ManagerMultiHotelNotice' | abpLocalization }}</span>
+          </div>
+
+          <!-- Danh sách chi nhánh: Lễ tân thuần túy dùng Radio (1-1) -->
+          <div *ngIf="isReceptionistOnly" class="hotel-selection-list">
+            <div
+              *ngFor="let h of availableHotels"
+              class="hotel-item"
+              [class.selected]="form.get('primaryHotelId')?.value === h.id"
+              (click)="onSingleHotelSelect(h.id)"
+            >
+              <input
+                type="radio"
+                name="singleHotel"
+                [value]="h.id"
+                [checked]="form.get('primaryHotelId')?.value === h.id"
+                class="form-check-input me-2"
+              />
+              <div class="hotel-meta">
+                <span class="hotel-name">{{ h.name }}</span>
+                <span class="hotel-code badge bg-dark ms-2">{{ h.code }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danh sách chi nhánh: Quản lý hoặc kiêm nhiệm Quản lý & Lễ tân dùng Checkbox (1-n) -->
+          <div *ngIf="!isReceptionistOnly" class="hotel-selection-list">
+            <div
+              *ngFor="let h of availableHotels"
+              class="hotel-item"
+              [class.selected]="isHotelChecked(h.id)"
+            >
+              <div class="d-flex align-items-center flex-grow-1">
+                <input
+                  type="checkbox"
+                  [checked]="isHotelChecked(h.id)"
+                  (change)="onMultiHotelToggle(h.id, $event)"
+                  class="form-check-input me-2"
+                  [id]="'hotel_' + h.id"
+                />
+                <label [for]="'hotel_' + h.id" class="hotel-meta mb-0 cursor-pointer">
+                  <div>
+                    <span class="hotel-name">{{ h.name }}</span>
+                    <span class="hotel-code badge bg-dark ms-2">{{ h.code }}</span>
+                  </div>
+                  <div
+                    *ngIf="isHotelChecked(h.id) && hasOtherManager(h)"
+                    class="mt-1 d-flex align-items-center text-warning-emphasis small gap-1"
+                    style="font-size: 0.75rem; color: #b45309;"
+                  >
+                    <i class="fa-solid fa-triangle-exclamation text-warning flex-shrink-0"></i>
+                    <span>Đang do <strong>{{ h.managerName }}</strong> quản lý. Sẽ chuyển quyền khi lưu.</span>
+                  </div>
+                  <small *ngIf="!isHotelChecked(h.id) && h.managerName" class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-user-tie text-secondary me-1"></i>
+                    <span>{{ 'TenantStaff:CurrentManager' | abpLocalization }}: </span>
+                    <strong>{{ h.managerName }}</strong>
+                  </small>
+                </label>
+              </div>
+
+              <!-- Nút chọn cơ sở chính (Primary) -->
+              <button
+                *ngIf="isHotelChecked(h.id)"
+                type="button"
+                class="btn btn-sm btn-outline-warning"
+                [class.active]="form.get('primaryHotelId')?.value === h.id"
+                (click)="setPrimaryHotel(h.id, $event)"
+                [title]="'Identity:SetPrimaryHotelTooltip' | abpLocalization"
+              >
+                <i class="fa-solid fa-star me-1"></i>
+                <span>{{ form.get('primaryHotelId')?.value === h.id ? ('Identity:PrimaryHotel' | abpLocalization) : ('Identity:SetPrimary' | abpLocalization) }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </form>
+</bh-modal>
+
+<!-- Modal xác nhận thay đổi Quản lý cơ sở khi bấm Lưu -->
+<div class="confirm-manager-modal-wrapper" *ngIf="isConfirmChangeManagerOpen">
+  <bh-modal
+    [isOpen]="isConfirmChangeManagerOpen"
+    [config]="confirmChangeManagerConfig"
+    (confirm)="confirmChangeManagerAndSave()"
+    (cancel)="isConfirmChangeManagerOpen = false"
+  >
+    <div class="text-center py-2">
+      <div class="mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 2.8rem;"></i>
+      </div>
+      <h5 class="fw-bold mb-2 text-dark">
+        {{ 'TenantStaff:ConfirmChangeManagerTitle' | abpLocalization }}
+      </h5>
+
+      <!-- 1 cơ sở -->
+      <p class="text-muted mb-3" *ngIf="conflictingHotels.length === 1">
+        Cơ sở <strong class="text-dark">{{ conflictingHotels[0].code }} - {{ conflictingHotels[0].name }}</strong> hiện đang do Quản lý <strong class="text-danger">{{ conflictingHotels[0].managerName || 'một nhân sự khác' }}</strong> phụ trách.
+      </p>
+
+      <!-- Nhiều cơ sở -->
+      <div class="text-start mb-3" *ngIf="conflictingHotels.length > 1">
+        <p class="text-muted mb-2 small">Các cơ sở sau hiện đang có Quản lý phụ trách:</p>
+        <ul class="list-group list-group-flush border rounded-3 p-2 bg-light mb-2 small">
+          <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-1 px-2" *ngFor="let ch of conflictingHotels">
+            <span class="fw-medium text-dark">{{ ch.code }} - {{ ch.name }}</span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+              <i class="fa-solid fa-user-tie me-1"></i>{{ ch.managerName }}
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="alert alert-warning text-start small mb-0">
+        <div class="d-flex align-items-start">
+          <i class="fa-solid fa-circle-exclamation text-warning me-2 mt-1 fs-6"></i>
+          <div>
+            <strong>Lưu ý:</strong> Mỗi cơ sở khách sạn chỉ được phép có <strong>duy nhất 1 Quản lý</strong> hoạt động. Khi bạn xác nhận, quyền quản lý tại cơ sở này sẽ được chuyển giao cho nhân sự này và Quản lý hiện tại sẽ bị hủy quyền phân công tại cơ sở.
+          </div>
+        </div>
+      </div>
+    </div>
+  </bh-modal>
+</div>
+

@@ -2,20 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using OpenIddict.Validation.AspNetCore;
 using OpenIddict.Server.AspNetCore;
 using BookingHotel.EntityFrameworkCore;
 using BookingHotel.MultiTenancy;
 using BookingHotel.HealthChecks;
+using BookingHotel.Manager.Feedback;
 using Microsoft.OpenApi;
 using Volo.Abp;
 using Volo.Abp.Studio;
@@ -127,6 +133,7 @@ public class BookingHotelHttpApiHostModule : AbpModule
         ConfigureSwagger(context, configuration);
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
+        context.Services.AddHostedService<ComplaintSlaCheckWorker>();
     }
 
     private void ConfigureStudio(IHostEnvironment hostingEnvironment)
@@ -142,7 +149,67 @@ public class BookingHotelHttpApiHostModule : AbpModule
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
-        context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+        var configuration = context.Services.GetConfiguration();
+        var secretKey = configuration["AuthServer:DefaultPassPhrase"] 
+            ?? configuration["StringEncryption:DefaultPassPhrase"] 
+            ?? "BookingHotelSuperSecretSigningKey20261111!";
+
+        context.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = "SmartBearer";
+            options.DefaultAuthenticateScheme = "SmartBearer";
+            options.DefaultChallengeScheme = "SmartBearer";
+        })
+            .AddJwtBearer("CustomJwtBearer", options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = configuration["AuthServer:Authority"] ?? "https://localhost:44386",
+                    ValidateAudience = true,
+                    ValidAudience = "BookingHotel",
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey.PadRight(32))),
+                    ValidateLifetime = true,
+                    RoleClaimType = Volo.Abp.Security.Claims.AbpClaimTypes.Role,
+                    NameClaimType = Volo.Abp.Security.Claims.AbpClaimTypes.UserName
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = ctx =>
+                    {
+                        Console.WriteLine("[CustomJwtBearer Failed]: " + ctx.Exception.ToString());
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    },
+                    OnTokenValidated = ctx =>
+                    {
+                        Console.WriteLine("[CustomJwtBearer Succeeded] for: " + ctx.Principal?.Identity?.Name);
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    }
+                };
+            })
+            .AddPolicyScheme("SmartBearer", "JWT or OpenIddict", options =>
+            {
+                options.ForwardDefaultSelector = ctx =>
+                {
+                    string? authHeader = ctx.Request.Headers["Authorization"];
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var token = authHeader.Substring("Bearer ".Length).Trim();
+                        var handler = new JwtSecurityTokenHandler();
+                        if (handler.CanReadToken(token))
+                        {
+                            return "CustomJwtBearer";
+                        }
+                    }
+                    return OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+                };
+            });
+
+        context.Services.ForwardIdentityAuthenticationForBearer("SmartBearer");
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;

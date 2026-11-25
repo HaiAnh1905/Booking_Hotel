@@ -1,0 +1,60 @@
+<bh-modal
+  [isOpen]="isOpen"
+  [config]="modalConfig"
+  [busy]="isSaving()"
+  (cancel)="onCancel()"
+  (confirm)="onConfirm()"
+>
+  @if (ratePlan) {
+    <div class="readonly-chain-box mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-semibold text-dark">{{ ratePlan.name }}</span>
+        <span class="badge bg-dark text-info">{{ ratePlan.code }}</span>
+      </div>
+      @if (ratePlan.description) {
+        <p class="small text-muted mb-2">{{ ratePlan.description }}</p>
+      }
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="policy-chip">
+          <i class="fa-solid fa-mug-hot me-1"></i>
+          {{ (ratePlan.includesBreakfast ? 'Manager:Rates:BreakfastIncluded' : 'Manager:Rates:NoBreakfast') | abpLocalization }}
+        </span>
+        <span class="policy-chip">
+          <i class="fa-solid fa-rotate-left me-1"></i>
+          {{ (ratePlan.isRefundable ? 'Manager:Rates:Refundable' : 'Manager:Rates:NonRefundable') | abpLocalization }}
+        </span>
+      </div>
+      <div class="small text-muted">
+        <i class="fa-solid fa-lock me-1"></i>
+        {{ 'Manager:Rates:ChainPolicyReadOnlyNote' | abpLocalization }}
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onConfirm()">
+      <div class="mb-3">
+        <label class="form-label">
+          {{ 'Manager:Rates:ColBasePrice' | abpLocalization }} <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+          <input
+            type="number"
+            class="form-control"
+            formControlName="basePrice"
+            min="1"
+            step="10000"
+            [class.is-invalid]="form.get('basePrice')?.invalid && form.get('basePrice')?.touched"
+          />
+          <span class="input-group-text">VNĐ</span>
+        </div>
+        @if (errorKey()) {
+          <div class="text-danger small mt-1">{{ errorKey()! | abpLocalization }}</div>
+        }
+      </div>
+
+      <div class="alert alert-info py-2 px-3 small mb-0">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        {{ 'Manager:Rates:BasePricePreserveOverrideNote' | abpLocalization }}
+      </div>
+    </form>
+  }
+</bh-modal>

@@ -2,7 +2,7 @@ import { AfterViewInit, Component, OnDestroy, OnInit, inject, ChangeDetectorRef 
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService, LocalizationPipe } from '@abp/ng.core';
+import { AuthService, LocalizationPipe, LocalizationService } from '@abp/ng.core';
 import { OAuthStorage } from 'angular-oauth2-oidc';
 import { environment } from '../../../environments/environment';
 import { AuthProxyService } from '../services/auth-proxy.service';
@@ -22,6 +22,7 @@ export class ForgotPasswordComponent implements OnInit, AfterViewInit, OnDestroy
   private router = inject(Router);
   private authService = inject(AuthService);
   private oAuthStorage = inject(OAuthStorage);
+  private localization = inject(LocalizationService);
   private cdr = inject(ChangeDetectorRef);
 
   forgotForm!: FormGroup;
@@ -144,7 +145,7 @@ export class ForgotPasswordComponent implements OnInit, AfterViewInit, OnDestroy
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Không thể gửi yêu cầu đặt lại mật khẩu. Vui lòng thử lại.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:SendResetEmailFailed');
         this.cdr.detectChanges();
       }
     });
@@ -190,7 +191,7 @@ export class ForgotPasswordComponent implements OnInit, AfterViewInit, OnDestroy
       },
       error: (err) => {
         this.isResending = false;
-        this.errorMessage = err?.error?.error?.message || 'Không thể gửi lại email. Vui lòng thử lại sau.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:ResendEmailFailed');
         this.cdr.detectChanges();
       }
     });

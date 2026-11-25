@@ -2,7 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService, LocalizationPipe } from '@abp/ng.core';
+import { AuthService, LocalizationPipe, LocalizationService } from '@abp/ng.core';
 import { OAuthStorage } from 'angular-oauth2-oidc';
 import { AuthProxyService } from '../services/auth-proxy.service';
 import { passwordComplexityValidator, checkPasswordCriteria, PasswordCriteriaState } from '../validators/password-complexity.validator';
@@ -21,6 +21,7 @@ export class ResetPasswordComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private oAuthStorage = inject(OAuthStorage);
+  private localization = inject(LocalizationService);
   private cdr = inject(ChangeDetectorRef);
 
   resetForm!: FormGroup;
@@ -93,7 +94,7 @@ export class ResetPasswordComponent implements OnInit {
   onSubmit(): void {
     if (this.resetForm.invalid || !this.userId || !this.resetToken) {
       if (!this.userId || !this.resetToken) {
-        this.errorMessage = 'Liên kết đặt lại mật khẩu không hợp lệ hoặc thiếu thông tin xác thực.';
+        this.errorMessage = this.localization.instant('Auth:InvalidResetLink');
       }
       return;
     }
@@ -115,7 +116,7 @@ export class ResetPasswordComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Không thể đặt lại mật khẩu. Liên kết có thể đã hết hạn.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:InvalidResetLink');
         this.cdr.detectChanges();
       }
     });

@@ -1,5 +1,37 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* =========================================================================
+   GLOBAL CSS RESET & FULL-BLEED VIEWPORT (LOẠI BỎ TOÀN BỘ KHOẢNG CÁCH RÌA)
+   ========================================================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #fafbfc !important;
+  overflow-x: clip;
+}
+
+body.bh-modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+app-root,
+abp-dynamic-layout,
+abp-layout-empty {
+  display: block;
+  width: 100% !important;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
 :root {
   --lpx-theme-light-bg: url('assets/images/login/login-bg-img-light.svg');
   --lpx-theme-dim-bg: url('assets/images/login/login-bg-img-dim.svg');
@@ -209,18 +241,24 @@
 }
 
 #lpx-wrapper,
-#lpx-wrapper.hover-trigger {
-  padding-left: 0 !important;
-  margin-left: 0 !important;
+#lpx-wrapper.hover-trigger,
+#lpx-wrapper.full,
+#lpx-wrapper.fixed {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 
-  .lpx-content-container {
-    margin-left: 0 !important;
+  .lpx-content-container,
+  .lpx-content-wrapper,
+  .lpx-content {
+    margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
   }
 
   .lpx-footbar-container {
@@ -231,3 +269,152 @@
     display: none !important;
   }
 }
+
+/* =========================================================================
+   QUY CHUẨN ĐỘ TƯƠNG PHẢN CAO CHO BẢNG DỮ LIỆU & BIỂU MẪU (WCAG 2.1 AA)
+   ========================================================================= */
+.table {
+  color: #1e293b;
+
+  thead th {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    background-color: #f1f5f9 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+
+  tbody td {
+    color: #1e293b !important;
+  }
+
+  td.text-end,
+  th.text-end,
+  .col-actions,
+  .action-col {
+    white-space: nowrap !important;
+  }
+}
+
+.action-buttons-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* =========================================================================
+   QUY CHUẨN MÀU NỀN & TRƯỜNG NHẬP LIỆU (ZERO MUDDY-GRAY STANDARD)
+   Loại bỏ hoàn toàn màu xám tối bẩn (#b0b0b0 / #adb5bd) của theme LeptonX
+   ========================================================================= */
+.bg-light {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 500;
+  opacity: 1 !important;
+  cursor: not-allowed;
+
+  &::placeholder {
+    color: #94a3b8 !important;
+  }
+}
+
+.form-control,
+.form-select {
+  border-color: #cbd5e1;
+  color: #0f172a;
+
+  &:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  }
+}
+
+/* =========================================================================
+   QUY CHUẨN CHECKBOX & RADIO RÕ NÉT (HIGH VISIBILITY CHECKBOX STANDARD)
+   ========================================================================= */
+.form-check-input {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid #64748b !important;
+  background-color: #ffffff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease-in-out;
+
+  &:hover {
+    border-color: #334155 !important;
+  }
+
+  &:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+  }
+
+  &:checked {
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+  }
+}
+
+/* =========================================================================
+   HIẾN PHÁP ĐIỀU KHOẢN XI: QUY CHUẨN ĐÁNH DẤU TRƯỜNG BẮT BUỘC (REQUIRED FIELD STANDARD)
+   Chỉ hiển thị dấu * màu đỏ (#dc2626) ở cuối nhãn.
+   Tuyệt đối KHÔNG đổi màu chữ của toàn bộ nhãn và KHÔNG in đậm.
+   ========================================================================= */
+
+/* Bảo toàn màu chữ tự nhiên và font-weight thường cho nhãn label */
+label,
+.form-label,
+.field-label,
+label.required,
+.form-label.required,
+.field-label.required,
+.form-group.required > label {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Chỉ riêng dấu sao mới có màu đỏ và tuyệt đối KHÔNG in đậm */
+span.required,
+span.required-star,
+span.required-asterisk,
+.text-danger.required-marker,
+label > .text-danger,
+.form-label > .text-danger,
+.field-label > .text-danger,
+.label-with-link > label > .text-danger {
+  color: #dc2626 !important;
+  font-weight: 400 !important;
+  margin-left: 3px;
+  display: inline-block;
+}
+
+/* Fallback bằng CSS ::after khi label có class .required mà không có thẻ span con */
+label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.form-label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.field-label.required:not(:has(.text-danger)):not(:has(.required))::after,
+.form-group.required > label:not(:has(.text-danger)):not(:has(.required))::after {
+  content: " *";
+  color: #dc2626 !important;
+  font-weight: 400 !important;
+}
+
+

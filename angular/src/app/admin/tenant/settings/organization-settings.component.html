@@ -1,0 +1,278 @@
+<div class="org-settings-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">{{ 'TenantOrg:Title' | abpLocalization }}</h2>
+      <p class="page-subtitle">{{ 'TenantOrg:Subtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving">
+      <i class="fa-solid fa-floppy-disk me-1"></i> {{ 'Common:Save' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-nav mb-4">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'profile'"
+      (click)="activeTab = 'profile'"
+    >
+      <i class="fa-solid fa-building me-1"></i>
+      {{ 'TenantOrg:ProfileTab' | abpLocalization }}
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'policy'"
+      (click)="activeTab = 'policy'"
+    >
+      <i class="fa-solid fa-scale-balanced me-1"></i>
+      {{ 'TenantOrg:PolicyTab' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">{{ 'Common:Loading' | abpLocalization }}</span>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" *ngIf="!isLoading" (ngSubmit)="save()">
+    <!-- Profile Tab -->
+    <div class="settings-card" *ngIf="activeTab === 'profile'">
+      <h4 class="card-title mb-4">
+        <i class="fa-solid fa-address-card text-primary me-2"></i>
+        {{ 'TenantOrg:ProfileTab' | abpLocalization }}
+      </h4>
+
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label">{{ 'TenantOrg:OrgName' | abpLocalization }} <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            formControlName="organizationName"
+            [placeholder]="'TenantOrg:OrgNamePlaceholder' | abpLocalization"
+          />
+          <div class="text-danger small mt-1" *ngIf="form.get('organizationName')?.touched && form.get('organizationName')?.invalid">
+            {{ 'Common:FieldRequired' | abpLocalization }}
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">{{ 'TenantOrg:Logo' | abpLocalization }}</label>
+          <input
+            type="text"
+            class="form-control"
+            formControlName="logoUrl"
+            [placeholder]="'TenantOrg:LogoUrlPlaceholder' | abpLocalization"
+          />
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label">{{ 'TenantOrg:Headquarter' | abpLocalization }}</label>
+          <input
+            type="text"
+            class="form-control"
+            formControlName="headquarterAddress"
+            [placeholder]="'TenantOrg:HeadquarterPlaceholder' | abpLocalization"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">{{ 'TenantOrg:Hotline' | abpLocalization }}</label>
+          <input type="text" class="form-control" formControlName="hotline" placeholder="1900 6868" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">{{ 'TenantOrg:ContactEmail' | abpLocalization }}</label>
+          <input type="email" class="form-control" formControlName="contactEmail" placeholder="contact@bookinghotel.vn" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">{{ 'TenantOrg:WebsiteUrl' | abpLocalization }}</label>
+          <input type="text" class="form-control" formControlName="websiteUrl" placeholder="https://bookinghotel.vn" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Hybrid Policy Tab -->
+    <div class="settings-card" *ngIf="activeTab === 'policy'">
+      <h4 class="card-title mb-3">
+        <i class="fa-solid fa-sliders text-primary me-2"></i>
+        {{ 'TenantOrg:PolicyTab' | abpLocalization }}
+      </h4>
+
+      <!-- Hybrid Notice -->
+      <div class="alert alert-warning d-flex align-items-center mb-4">
+        <i class="fa-solid fa-circle-info fa-lg me-3 text-warning"></i>
+        <div>
+          {{ 'TenantOrg:CancellationPolicyNotice' | abpLocalization }}
+        </div>
+      </div>
+
+      <!-- Khung giờ Check-in / Check-out mặc định chuỗi -->
+      <div class="row g-3 mb-4 pb-4 border-bottom">
+        <div class="col-md-6">
+          <label class="form-label">{{ 'TenantOrg:DefaultCheckInTime' | abpLocalization }} <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="defaultCheckInTime" />
+          <div class="form-text">{{ 'TenantOrg:DefaultCheckInHelp' | abpLocalization }}</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">{{ 'TenantOrg:DefaultCheckOutTime' | abpLocalization }} <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="defaultCheckOutTime" />
+          <div class="form-text">{{ 'TenantOrg:DefaultCheckOutHelp' | abpLocalization }}</div>
+        </div>
+      </div>
+
+      <!-- Chính Sách Hủy Phòng Thống Nhất Toàn Chuỗi -->
+      <h5 class="fw-bold text-dark mb-1">
+        <i class="fa-solid fa-calendar-xmark text-danger me-2"></i>
+        {{ 'TenantOrg:CancellationPolicy' | abpLocalization }}
+      </h5>
+      <p class="text-muted small mb-3">{{ 'TenantOrg:CancellationPolicyHelp' | abpLocalization }}</p>
+
+      <div class="policy-configuration-grid mb-4">
+        <div class="row g-3">
+          <!-- 1. Hạn Hủy Miễn Phí -->
+          <div class="col-md-6">
+            <div class="policy-box policy-box-free p-3 rounded-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-success-subtle text-success me-2">
+                  <i class="fa-solid fa-check"></i> {{ 'TenantOrg:StageFree' | abpLocalization }}
+                </span>
+                <span class="fw-bold small">{{ 'TenantOrg:FreeCancellationHours' | abpLocalization }}</span>
+              </div>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="freeCancellationHours"
+                  min="0"
+                  max="720"
+                />
+                <span class="input-group-text">{{ 'TenantOrg:HoursUnit' | abpLocalization }}</span>
+              </div>
+              <div class="form-text small text-muted mt-2">
+                {{ 'TenantOrg:FreeCancellationHoursHelp' | abpLocalization }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Mốc Phạt Một Phần -->
+          <div class="col-md-6">
+            <div class="policy-box policy-box-partial p-3 rounded-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-warning-subtle text-warning me-2">
+                  <i class="fa-solid fa-triangle-exclamation"></i> {{ 'TenantOrg:StagePartial' | abpLocalization }}
+                </span>
+                <span class="fw-bold small">{{ 'TenantOrg:PartialPenaltyHours' | abpLocalization }}</span>
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      formControlName="partialPenaltyHours"
+                      min="0"
+                      max="720"
+                    />
+                    <span class="input-group-text">{{ 'TenantOrg:HoursUnit' | abpLocalization }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      formControlName="partialPenaltyPercent"
+                      min="0"
+                      max="100"
+                    />
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-text small text-muted mt-2">
+                {{ 'TenantOrg:PartialPenaltyPercentHelp' | abpLocalization }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Mức Phạt Sát Giờ / Vắng Mặt -->
+          <div class="col-md-12">
+            <div class="policy-box policy-box-full p-3 rounded-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-danger-subtle text-danger me-2">
+                  <i class="fa-solid fa-ban"></i> {{ 'TenantOrg:StageFull' | abpLocalization }}
+                </span>
+                <span class="fw-bold small">{{ 'TenantOrg:FullPenaltyPercent' | abpLocalization }}</span>
+              </div>
+              <div class="input-group" style="max-width: 260px;">
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="fullPenaltyPercent"
+                  min="0"
+                  max="100"
+                />
+                <span class="input-group-text">%</span>
+              </div>
+              <div class="form-text small text-muted mt-2">
+                {{ 'TenantOrg:FullPenaltyPercentHelp' | abpLocalization }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Timeline Preview -->
+      <div class="policy-timeline-preview p-3 rounded-3">
+        <h6 class="fw-bold text-dark mb-3">
+          <i class="fa-solid fa-timeline text-primary me-2"></i>
+          {{ 'TenantOrg:PolicyPreview' | abpLocalization }}
+        </h6>
+        <div class="timeline-steps">
+          <div class="timeline-step">
+            <div class="step-badge text-success">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="step-content">
+              <strong>{{ 'TenantOrg:PreviewFreeRefund' | abpLocalization }}</strong>
+              <span class="text-muted small d-block">
+                {{ previewFreeCondition }}
+              </span>
+            </div>
+          </div>
+          <div class="timeline-step">
+            <div class="step-badge text-warning">
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div class="step-content">
+              <strong>{{ previewPartialPenalty }}</strong>
+              <span class="text-muted small d-block">
+                {{ previewPartialCondition }}
+              </span>
+            </div>
+          </div>
+          <div class="timeline-step">
+            <div class="step-badge text-danger">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div class="step-content">
+              <strong>{{ previewFullPenalty }}</strong>
+              <span class="text-muted small d-block">
+                {{ previewFullCondition }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

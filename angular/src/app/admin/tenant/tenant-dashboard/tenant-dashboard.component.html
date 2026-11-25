@@ -1,0 +1,177 @@
+<div class="tenant-dashboard-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">{{ 'TenantDashboard:Title' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'TenantDashboard:Subtitle' | abpLocalization }}</p>
+    </div>
+
+    <!-- Date Filter & Quick Actions -->
+    <div class="header-actions">
+      <div class="date-filter-group">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
+          <input
+            type="date"
+            class="form-control"
+            [(ngModel)]="startDate"
+            (change)="onDateFilterChange()"
+          />
+          <span class="input-group-text">{{ 'Common:To' | abpLocalization }}</span>
+          <input
+            type="date"
+            class="form-control"
+            [(ngModel)]="endDate"
+            (change)="onDateFilterChange()"
+          />
+        </div>
+      </div>
+      <a routerLink="/tenant/hotels" class="btn btn-outline-primary btn-sm">
+        <i class="fa-solid fa-hotel me-1"></i> {{ 'TenantHotels:Title' | abpLocalization }}
+      </a>
+      <a routerLink="/tenant/staff" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-user-plus me-1"></i> {{ 'TenantStaff:Title' | abpLocalization }}
+      </a>
+    </div>
+  </div>
+
+  <!-- 5 Gradient Metric Cards -->
+  <div class="metrics-grid">
+    <!-- Doanh thu thực thu Cash-basis -->
+    <div class="metric-card metric-gold">
+      <div class="metric-icon-box">
+        <i class="fa-solid fa-sack-dollar"></i>
+      </div>
+      <div class="metric-body">
+        <span class="metric-title">{{ 'TenantDashboard:SettledRevenue' | abpLocalization }}</span>
+        <span class="metric-value">{{ formatRevenue }}</span>
+        <span class="metric-sub">{{ 'TenantReports:NetCashFlowSub' | abpLocalization }}</span>
+      </div>
+    </div>
+
+    <!-- RevPAR trung bình toàn chuỗi -->
+    <div class="metric-card metric-emerald">
+      <div class="metric-icon-box">
+        <i class="fa-solid fa-chart-line"></i>
+      </div>
+      <div class="metric-body">
+        <span class="metric-title">{{ 'TenantDashboard:AverageRevPAR' | abpLocalization }}</span>
+        <span class="metric-value">{{ formatRevPar }}</span>
+        <span class="metric-sub">{{ 'TenantDashboard:AverageADR' | abpLocalization }}: {{ formatAdr }}</span>
+      </div>
+    </div>
+
+    <!-- Công suất phòng trung bình -->
+    <div class="metric-card metric-cyan">
+      <div class="metric-icon-box">
+        <i class="fa-solid fa-percent"></i>
+      </div>
+      <div class="metric-body">
+        <span class="metric-title">{{ 'TenantDashboard:AverageOccupancy' | abpLocalization }}</span>
+        <span class="metric-value">{{ formatOccupancy }}</span>
+        <span class="metric-sub">{{ 'TenantDashboard:TotalBookings' | abpLocalization }}: {{ overview.totalBookingCount }}</span>
+      </div>
+    </div>
+
+    <!-- Cơ sở vận hành -->
+    <div class="metric-card metric-blue">
+      <div class="metric-icon-box">
+        <i class="fa-solid fa-hotel"></i>
+      </div>
+      <div class="metric-body">
+        <span class="metric-title">{{ 'TenantDashboard:TotalHotels' | abpLocalization }}</span>
+        <span class="metric-value">{{ overview.operatingBranchCount }} / {{ overview.totalHotelCount }}</span>
+        <span class="metric-sub">{{ 'TenantHotels:StatusMaintenance' | abpLocalization }}: {{ overview.suspendedBranchCount }}</span>
+      </div>
+    </div>
+
+    <!-- Nhân sự toàn chuỗi -->
+    <div class="metric-card metric-purple">
+      <div class="metric-icon-box">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="metric-body">
+        <span class="metric-title">{{ 'TenantDashboard:TotalStaff' | abpLocalization }}</span>
+        <span class="metric-value">{{ overview.totalStaffCount }}</span>
+        <span class="metric-sub">{{ 'TenantDashboard:StaffSub' | abpLocalization }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng xếp hạng hiệu suất cơ sở theo RevPAR -->
+  <div class="dashboard-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">
+        <i class="fa-solid fa-trophy text-warning me-2"></i>
+        {{ 'TenantDashboard:TopHotels' | abpLocalization }}
+      </h2>
+      <span class="badge bg-primary-subtle text-primary fw-normal">
+        {{ 'TenantDashboard:RankRevParSub' | abpLocalization }}
+      </span>
+    </div>
+
+    <div class="panel-body">
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">{{ 'Common:Loading' | abpLocalization }}</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive" *ngIf="!isLoading && sortedBranches.length > 0">
+        <table class="branch-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">{{ 'TenantDashboard:Rank' | abpLocalization }}</th>
+              <th>{{ 'TenantDashboard:HotelName' | abpLocalization }}</th>
+              <th>{{ 'TenantHotels:ColCode' | abpLocalization }}</th>
+              <th>{{ 'TenantHotels:ColCapacity' | abpLocalization }}</th>
+              <th>{{ 'TenantDashboard:OccupancyRate' | abpLocalization }}</th>
+              <th>{{ 'TenantDashboard:Revenue' | abpLocalization }}</th>
+              <th>{{ 'TenantDashboard:AverageADR' | abpLocalization }}</th>
+              <th class="text-end fw-bold text-primary">{{ 'TenantDashboard:RevPAR' | abpLocalization }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of sortedBranches; let idx = index">
+              <td>
+                <span class="rank-badge" [class.rank-gold]="idx === 0" [class.rank-silver]="idx === 1" [class.rank-bronze]="idx === 2">
+                  #{{ idx + 1 }}
+                </span>
+              </td>
+              <td class="fw-bold text-dark">{{ b.name }}</td>
+              <td><span class="badge-code">{{ b.code }}</span></td>
+              <td>{{ b.rooms }} {{ 'Common:Rooms' | abpLocalization }}</td>
+              <td>
+                <div class="occupancy-wrap">
+                  <span class="occupancy-num">{{ b.occupancyPercent }}%</span>
+                  <div class="occupancy-bar-bg">
+                    <div class="occupancy-bar-fill" [style.width.%]="b.occupancyPercent"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="revenue-val">{{ b.monthlyRevenue | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td>{{ b.adr | currency:'VND':'symbol':'1.0-0':'vi-VN' }}</td>
+              <td class="text-end fw-bold text-primary revpar-cell">
+                {{ b.revPar | currency:'VND':'symbol':'1.0-0':'vi-VN' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty -->
+      <div class="empty-branches-state" *ngIf="!isLoading && sortedBranches.length === 0">
+        <div class="empty-icon-circle">
+          <i class="fa-solid fa-hotel"></i>
+        </div>
+        <h3 class="empty-title">{{ 'TenantHotels:EmptyTitle' | abpLocalization }}</h3>
+        <p class="empty-desc">{{ 'TenantHotels:EmptySubtitle' | abpLocalization }}</p>
+        <a routerLink="/tenant/hotels" class="btn btn-outline-primary">
+          <i class="fa-solid fa-plus me-1"></i> {{ 'TenantHotels:CreateHotel' | abpLocalization }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

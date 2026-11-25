@@ -1,0 +1,239 @@
+<div class="staff-list-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">{{ 'TenantStaff:Title' | abpLocalization }}</h2>
+      <p class="page-subtitle">{{ 'TenantStaff:Subtitle' | abpLocalization }}</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fa-solid fa-user-plus me-1"></i>
+      {{ 'TenantStaff:CreateStaff' | abpLocalization }}
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        class="form-control search-input"
+        [(ngModel)]="searchQuery"
+        [placeholder]="'TenantStaff:SearchPlaceholder' | abpLocalization"
+      />
+    </div>
+
+    <div class="role-filter">
+      <select class="form-select" [(ngModel)]="selectedRoleFilter">
+        <option value="">{{ 'TenantStaff:SelectRole' | abpLocalization }}</option>
+        <option value="HotelManager">{{ 'TenantStaff:RoleHotelManager' | abpLocalization }}</option>
+        <option value="Receptionist">{{ 'TenantStaff:RoleReceptionist' | abpLocalization }}</option>
+      </select>
+    </div>
+
+    <div class="hotel-filter">
+      <select class="form-select" [(ngModel)]="selectedHotelFilter">
+        <option value="">{{ 'TenantStaff:SelectHotel' | abpLocalization }}</option>
+        <option *ngFor="let h of hotels" [value]="h.id">{{ h.code }} - {{ h.name }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="staff-table">
+        <thead>
+          <tr>
+            <th>{{ 'TenantStaff:ColFullName' | abpLocalization }}</th>
+            <th>{{ 'TenantStaff:ColUsername' | abpLocalization }}</th>
+            <th>{{ 'TenantStaff:ColHotel' | abpLocalization }}</th>
+            <th>{{ 'TenantStaff:ColRoles' | abpLocalization }}</th>
+            <th>{{ 'TenantStaff:ColLockStatus' | abpLocalization }}</th>
+            <th class="text-end">{{ 'TenantStaff:ColActions' | abpLocalization }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading -->
+          <tr *ngIf="isLoading">
+            <td colspan="6" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">{{ 'Common:Loading' | abpLocalization }}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data -->
+          <ng-container *ngIf="!isLoading">
+            <tr *ngFor="let u of filteredUsers">
+              <td>
+                <div class="user-info-cell">
+                  <div class="user-avatar">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <div class="user-meta">
+                    <span class="user-fullname">{{ u.surname }} {{ u.name }}</span>
+                    <span class="user-email">
+                      <i class="fa-solid fa-envelope me-1"></i>{{ u.email }}
+                      <span *ngIf="u.phoneNumber"> • <i class="fa-solid fa-phone me-1"></i>{{ u.phoneNumber }}</span>
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <span class="username-badge">{{ u.userName }}</span>
+              </td>
+              <td>
+                <div class="branch-tags">
+                  <ng-container *ngIf="u.assignedHotels && u.assignedHotels.length > 0; else noHotelTpl">
+                    <span
+                      *ngFor="let a of u.assignedHotels"
+                      class="branch-tag"
+                      [class.primary-tag]="a.isPrimary && u.roleNames?.includes('Receptionist')"
+                    >
+                      <i
+                        class="fa-solid"
+                        [class.fa-bell-concierge]="a.isPrimary && u.roleNames?.includes('Receptionist')"
+                        [class.fa-hotel]="!a.isPrimary || !u.roleNames?.includes('Receptionist')"
+                      ></i>
+                      {{ a.hotelCode }}
+                      <span *ngIf="a.isPrimary && u.roleNames?.includes('Receptionist')" class="badge-primary-text">({{ 'TenantStaff:Primary' | abpLocalization }})</span>
+                    </span>
+                  </ng-container>
+                  <ng-template #noHotelTpl>
+                    <span class="text-muted fst-italic">—</span>
+                  </ng-template>
+                </div>
+              </td>
+              <td>
+                <div class="roles-cell">
+                  <span *ngIf="isDualRole(u)" class="role-badge role-dual">
+                    <i class="fa-solid fa-layer-group me-1"></i>
+                    {{ 'TenantStaff:RoleDual' | abpLocalization }}
+                  </span>
+                  <ng-container *ngIf="!isDualRole(u)">
+                    <span
+                      *ngFor="let r of u.roleNames"
+                      class="role-badge"
+                      [class.role-manager]="r === 'HotelManager'"
+                      [class.role-receptionist]="r === 'Receptionist'"
+                    >
+                      {{ r }}
+                    </span>
+                  </ng-container>
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <span *ngIf="u.isLockedOut" class="status-pill badge-danger">
+                  <i class="fa-solid fa-lock me-1"></i>
+                  {{ 'TenantStaff:LockedBruteForce' | abpLocalization }}
+                </span>
+                <span *ngIf="!u.isLockedOut && u.isActive" class="status-pill badge-success">
+                  <i class="fa-solid fa-circle-check me-1"></i>
+                  {{ 'TenantStaff:NormalStatus' | abpLocalization }}
+                </span>
+                <span *ngIf="!u.isLockedOut && !u.isActive" class="status-pill badge-secondary">
+                  <i class="fa-solid fa-ban me-1"></i>
+                  {{ 'TenantStaff:Deactivated' | abpLocalization }}
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <div class="actions-group">
+                  <!-- Edit -->
+                  <button
+                    type="button"
+                    class="btn-action btn-edit"
+                    (click)="openEditModal(u)"
+                    [title]="'Common:Edit' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+
+                  <!-- Transfer Branch -->
+                  <button
+                    type="button"
+                    class="btn-action btn-transfer"
+                    (click)="openTransferModal(u)"
+                    [title]="'TenantStaff:TransferBranch' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-arrows-split-up-and-left"></i>
+                  </button>
+
+                  <!-- Unlock Brute-force if locked -->
+                  <button
+                    *ngIf="u.isLockedOut"
+                    type="button"
+                    class="btn-action btn-unlock"
+                    (click)="unlockBruteForce(u)"
+                    [title]="'TenantStaff:UnlockAccount' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-lock-open"></i>
+                  </button>
+
+                  <!-- Toggle Active Status -->
+                  <button
+                    type="button"
+                    class="btn-action btn-toggle"
+                    (click)="toggleActive(u)"
+                    [title]="u.isActive ? ('TenantStaff:Deactivate' | abpLocalization) : ('TenantStaff:Activate' | abpLocalization)"
+                  >
+                    <i class="fa-solid" [class.fa-toggle-on]="u.isActive" [class.fa-toggle-off]="!u.isActive" [class.text-success]="u.isActive" [class.text-muted]="!u.isActive"></i>
+                  </button>
+
+                  <!-- Delete -->
+                  <button
+                    type="button"
+                    class="btn-action btn-delete"
+                    (click)="openDeleteModal(u)"
+                    [title]="'Common:Delete' | abpLocalization"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="filteredUsers.length === 0">
+              <td colspan="6" class="empty-state-cell py-5 text-center">
+                <p class="text-muted">{{ 'TenantStaff:NoMatchingStaff' | abpLocalization }}</p>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm/Sửa Nhân Viên -->
+<bh-staff-modal
+  [isOpen]="isStaffModalOpen"
+  [user]="selectedUserForEdit"
+  [hotels]="hotels"
+  (saveCreate)="onSaveCreate($event)"
+  (saveUpdate)="onSaveUpdate($event)"
+  (cancel)="isStaffModalOpen = false"
+></bh-staff-modal>
+
+<!-- Modal Điều Chuyển Chi Nhánh -->
+<bh-staff-transfer-modal
+  [isOpen]="isTransferModalOpen"
+  [user]="selectedUserForTransfer"
+  [hotels]="hotels"
+  (transfer)="onTransfer($event)"
+  (cancel)="isTransferModalOpen = false"
+></bh-staff-transfer-modal>
+
+<!-- Modal Xóa Nhân Viên -->
+<bh-modal
+  [isOpen]="isDeleteModalOpen"
+  [config]="deleteModalConfig"
+  (confirm)="confirmDelete()"
+  (cancel)="isDeleteModalOpen = false"
+>
+  <p class="mb-0" *ngIf="deletingUser">
+    {{ 'Common:DeleteConfirmation' | abpLocalization }}
+    <strong class="d-block mt-2 text-danger">{{ deletingUser.surname }} {{ deletingUser.name }} ({{ deletingUser.userName }})</strong>
+  </p>
+</bh-modal>

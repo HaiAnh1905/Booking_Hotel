@@ -30,3 +30,4 @@ export class BhLoadingSpinnerComponent {
   @Input() isFullscreen: boolean = false;
   @Input() colorVariant: 'red' | 'accent' | 'default' = 'red';
 }
+

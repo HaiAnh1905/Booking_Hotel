@@ -11,5 +11,8 @@ public class RegisterStep2InputDto
     [Required]
     [StringLength(128, MinimumLength = 2)]
     public string FullName { get; set; } = default!;
+
+    [StringLength(64, MinimumLength = 2)]
+    public string? UserName { get; set; }
 }
 

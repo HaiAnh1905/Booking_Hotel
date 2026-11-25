@@ -1,0 +1,152 @@
+<div class="guest-management-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="property-tag-row">
+        <span class="active-badge"><i class="fa-solid fa-hotel"></i> {{ propertyService.currentHotel()?.name }}</span>
+        <span class="code-badge">{{ propertyService.currentHotel()?.code }}</span>
+      </div>
+      <h1 class="page-title">{{ 'Menu:ManagerGuests' | abpLocalization }}</h1>
+      <p class="page-subtitle">{{ 'Manager:Guest:Subtitle' | abpLocalization }}</p>
+    </div>
+  </div>
+
+  <!-- Toolbar Search -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="Tìm kiếm theo tên khách, số điện thoại, email..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event); onSearchChange()" />
+    </div>
+
+    <div class="total-meta text-muted small">
+      Tổng cộng: <strong>{{ totalCount() }}</strong> khách hàng đã từng lưu trú
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="py-5 text-center text-muted">
+    <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i>
+    <p>{{ 'Common:Loading' | abpLocalization }}</p>
+  </div>
+
+  <!-- Guests Table -->
+  <div class="table-responsive bg-white rounded-3 border" *ngIf="!isLoading()">
+    <table class="table modern-table mb-0">
+      <thead>
+        <tr>
+          <th>{{ 'Manager:Guest:Name' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:Phone' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:Email' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:CCCD' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:TotalStays' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:TotalSpent' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:LastStay' | abpLocalization }}</th>
+          <th>{{ 'Manager:Guest:InternalNotes' | abpLocalization }}</th>
+          <th class="text-end">{{ 'Common:Actions' | abpLocalization }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let g of guests()">
+          <td>
+            <span class="guest-name fw-bold">{{ g.fullName }}</span>
+          </td>
+          <td>{{ g.phoneNumber }}</td>
+          <td>{{ g.email || '-' }}</td>
+          <td>
+            <span class="badge bg-light text-dark border font-monospace">{{ g.identityNumberMasked }}</span>
+          </td>
+          <td>
+            <span class="badge bg-primary-subtle text-primary border">{{ g.totalStaysAtThisHotel }} lượt</span>
+          </td>
+          <td class="fw-bold text-success">{{ g.totalSpentAtThisHotel | number:'1.0-0' }} VNĐ</td>
+          <td>{{ g.lastStayDate ? (g.lastStayDate | date:'dd/MM/yyyy') : '-' }}</td>
+          <td>
+            <span *ngIf="g.hasInternalNotes" class="badge-notes has-notes">
+              <i class="fa-solid fa-note-sticky me-1"></i> Có ghi chú
+            </span>
+            <span *ngIf="!g.hasInternalNotes" class="text-muted small">-</span>
+          </td>
+          <td class="text-end">
+            <!-- Xem Lịch sử lưu trú -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-info me-1"
+              title="Xem lịch sử các lần ở"
+              (click)="openHistoryDrawer(g)">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+            <!-- Ghi chú nội bộ -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning"
+              title="Quản lý ghi chú nội bộ"
+              (click)="openNotesModal(g)">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="guests().length === 0">
+          <td colspan="9" class="text-center py-5 text-muted">
+            <i class="fa-solid fa-users-slash fa-3x mb-2 d-block"></i>
+            {{ 'Common:NoData' | abpLocalization }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Ghi chú nội bộ -->
+  <bh-guest-notes-modal
+    [isOpen]="isNotesModalOpen()"
+    [guest]="selectedGuestForNotes()"
+    [hotelId]="propertyService.currentHotelId() || ''"
+    (closed)="isNotesModalOpen.set(false)">
+  </bh-guest-notes-modal>
+
+  <!-- Drawer / Modal Lịch sử lưu trú -->
+  <div class="modal-backdrop" *ngIf="selectedGuestForHistory()">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>
+            Lịch Sử Lưu Trú — {{ selectedGuestForHistory()?.fullName }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeHistoryDrawer()"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="isHistoryLoading()" class="py-3 text-center text-muted">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+          </div>
+
+          <div *ngIf="!isHistoryLoading() && stayHistory().length > 0" class="history-list">
+            <div *ngFor="let s of stayHistory()" class="history-card p-3 mb-2 rounded-3 border bg-light">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="font-monospace fw-bold text-primary">{{ s.bookingCode }}</span>
+                <span class="badge bg-secondary">{{ s.roomTypeName }}</span>
+              </div>
+              <div class="d-flex justify-content-between small text-muted">
+                <span>{{ s.checkInDate | date:'dd/MM/yyyy' }} → {{ s.checkOutDate | date:'dd/MM/yyyy' }}</span>
+                <span class="fw-bold text-dark">{{ s.totalAmount | number:'1.0-0' }} VNĐ</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!isHistoryLoading() && stayHistory().length === 0" class="text-center py-3 text-muted">
+            Chưa có lịch sử lưu trú trước đây
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeHistoryDrawer()">
+            {{ 'Common:Close' | abpLocalization }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

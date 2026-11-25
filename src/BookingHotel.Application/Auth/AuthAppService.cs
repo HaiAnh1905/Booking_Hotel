@@ -1,6 +1,10 @@
 using System;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Claims;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BookingHotel.Auth.Dtos;
 using BookingHotel.Auth.ErrorCodes;
@@ -22,6 +26,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
+using Volo.Abp.Users;
 
 namespace BookingHotel.Auth;
 
@@ -59,7 +64,22 @@ public class AuthAppService : ApplicationService, IAuthAppService
 
     public async Task<LoginResultDto> LoginWithEmailAsync(LoginWithEmailDto input)
     {
-        var user = await _userManager.FindByEmailAsync(input.Email);
+        IdentityUser? user = null;
+
+        // 1. Thử tìm trong ngữ cảnh hiện tại trước (Host hoặc Tenant cụ thể)
+        user = await _userManager.FindByEmailAsync(input.Email)
+            ?? await _userManager.FindByNameAsync(input.Email);
+
+        // 2. Nếu không tìm thấy, tắt bộ lọc IMultiTenant để tìm xuyên suốt các Tenant
+        if (user == null)
+        {
+            using (DataFilter.Disable<IMultiTenant>())
+            {
+                user = await _userManager.FindByEmailAsync(input.Email)
+                    ?? await _userManager.FindByNameAsync(input.Email);
+            }
+        }
+
         if (user == null)
         {
             return new LoginResultDto
@@ -69,55 +89,74 @@ public class AuthAppService : ApplicationService, IAuthAppService
             };
         }
 
-        var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, input.Password);
-        var evalResult = await _bruteForceManager.EvaluateLoginAttemptAsync(user, isPasswordCorrect);
-
-        await _securityLogManager.SaveAsync(new IdentitySecurityLogContext
+        using (CurrentTenant.Change(user.TenantId))
         {
-            Identity = "Identity",
-            Action = isPasswordCorrect ? "LoginSucceeded" : "LoginFailed",
-            UserName = user.UserName
-        });
+            // Tự động chuẩn hóa UserName cho các tài khoản cũ bị gán nhầm Email làm UserName
+            if (user.UserName == user.Email && (!string.IsNullOrWhiteSpace(user.Name) || !string.IsNullOrWhiteSpace(user.Surname)))
+            {
+                var fullName = $"{user.Surname} {user.Name}".Trim();
+                var targetUserName = GenerateUserNameFromFullName(fullName, user.Email);
+                if (!string.IsNullOrWhiteSpace(targetUserName) && targetUserName != user.UserName)
+                {
+                    var existingWithName = await _userManager.FindByNameAsync(targetUserName);
+                    if (existingWithName == null || existingWithName.Id == user.Id)
+                    {
+                        await _userManager.SetUserNameAsync(user, targetUserName);
+                    }
+                }
+            }
 
-        if (!evalResult.IsAllowed)
-        {
-            string message;
-            if (evalResult.IsDeactivated)
+            var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, input.Password);
+            var evalResult = await _bruteForceManager.EvaluateLoginAttemptAsync(user, isPasswordCorrect);
+
+            await _securityLogManager.SaveAsync(new IdentitySecurityLogContext
             {
-                message = L["Auth:AccountDeactivated"];
-            }
-            else if (evalResult.IsLockedOut)
+                Identity = "Identity",
+                Action = isPasswordCorrect ? "LoginSucceeded" : "LoginFailed",
+                UserName = user.UserName
+            });
+
+            if (!evalResult.IsAllowed)
             {
-                message = string.Format(L["Auth:AccountLocked"], evalResult.LockoutMinutes);
+                string message;
+                if (evalResult.IsDeactivated)
+                {
+                    message = L["Auth:AccountDeactivated"];
+                }
+                else if (evalResult.IsLockedOut)
+                {
+                    message = string.Format(L["Auth:AccountLocked"], evalResult.LockoutMinutes);
+                }
+                else
+                {
+                    var key = evalResult.MessageKey ?? "Auth:InvalidCredentials";
+                    message = string.Format(L[key], evalResult.RemainingAttemptsInCycle);
+                }
+
+                return new LoginResultDto
+                {
+                    IsSuccess = false,
+                    IsLockedOut = evalResult.IsLockedOut,
+                    RemainingLockoutSeconds = evalResult.RemainingLockoutSeconds,
+                    RemainingAttemptsInCycle = evalResult.RemainingAttemptsInCycle,
+                    IsDeactivated = evalResult.IsDeactivated,
+                    Message = message
+                };
             }
-            else
-            {
-                var key = evalResult.MessageKey ?? "Auth:InvalidCredentials";
-                message = string.Format(L[key], evalResult.RemainingAttemptsInCycle);
-            }
+
+            await _bruteForceManager.ResetCountersAsync(user);
+
+            var (token, expiresIn) = await _tokenGenerator.GenerateTokenAsync(user, input.RememberMe);
 
             return new LoginResultDto
             {
-                IsSuccess = false,
-                IsLockedOut = evalResult.IsLockedOut,
-                RemainingLockoutSeconds = evalResult.RemainingLockoutSeconds,
-                RemainingAttemptsInCycle = evalResult.RemainingAttemptsInCycle,
-                IsDeactivated = evalResult.IsDeactivated,
-                Message = message
+                IsSuccess = true,
+                AccessToken = token,
+                ExpiresIn = expiresIn,
+                TokenType = "Bearer",
+                ShouldChangePassword = user.GetProperty<bool>(BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty)
             };
         }
-
-        await _bruteForceManager.ResetCountersAsync(user);
-
-        var (token, expiresIn) = await _tokenGenerator.GenerateTokenAsync(user, input.RememberMe);
-
-        return new LoginResultDto
-        {
-            IsSuccess = true,
-            AccessToken = token,
-            ExpiresIn = expiresIn,
-            TokenType = "Bearer"
-        };
     }
 
     public async Task<LoginResultDto> LoginWithGoogleAsync(GoogleAuthInputDto input)
@@ -128,7 +167,15 @@ public class AuthAppService : ApplicationService, IAuthAppService
             throw new UserFriendlyException(L["Auth:InvalidCredentialsDefault"]);
         }
 
-        var user = await _userManager.FindByEmailAsync(googleInfo.Email);
+        IdentityUser? user = await _userManager.FindByEmailAsync(googleInfo.Email);
+        if (user == null)
+        {
+            using (DataFilter.Disable<IMultiTenant>())
+            {
+                user = await _userManager.FindByEmailAsync(googleInfo.Email);
+            }
+        }
+
         if (user == null)
         {
             var registrationToken = Guid.NewGuid();
@@ -162,45 +209,49 @@ public class AuthAppService : ApplicationService, IAuthAppService
             };
         }
 
-        if (!user.IsActive)
+        using (CurrentTenant.Change(user.TenantId))
         {
+            if (!user.IsActive)
+            {
+                return new LoginResultDto
+                {
+                    IsSuccess = false,
+                    IsDeactivated = true,
+                    Message = L["Auth:AccountDeactivated"]
+                };
+            }
+
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                var remaining = (int)Math.Ceiling((user.LockoutEnd.Value - DateTimeOffset.UtcNow).TotalSeconds);
+                return new LoginResultDto
+                {
+                    IsSuccess = false,
+                    IsLockedOut = true,
+                    RemainingLockoutSeconds = remaining,
+                    Message = string.Format(L["Auth:AccountLocked"], Math.Ceiling(remaining / 60.0))
+                };
+            }
+
+            if (user.GetProperty<string>(BookingHotelIdentityConsts.GoogleIdProperty) != googleInfo.Subject)
+            {
+                user.SetProperty(BookingHotelIdentityConsts.GoogleIdProperty, googleInfo.Subject);
+                await _userManager.UpdateAsync(user);
+            }
+
+            await _bruteForceManager.ResetCountersAsync(user);
+
+            var (token, expiresIn) = await _tokenGenerator.GenerateTokenAsync(user);
+
             return new LoginResultDto
             {
-                IsSuccess = false,
-                IsDeactivated = true,
-                Message = L["Auth:AccountDeactivated"]
+                IsSuccess = true,
+                AccessToken = token,
+                ExpiresIn = expiresIn,
+                TokenType = "Bearer",
+                ShouldChangePassword = user.GetProperty<bool>(BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty)
             };
         }
-
-        if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
-        {
-            var remaining = (int)Math.Ceiling((user.LockoutEnd.Value - DateTimeOffset.UtcNow).TotalSeconds);
-            return new LoginResultDto
-            {
-                IsSuccess = false,
-                IsLockedOut = true,
-                RemainingLockoutSeconds = remaining,
-                Message = string.Format(L["Auth:AccountLocked"], Math.Ceiling(remaining / 60.0))
-            };
-        }
-
-        if (user.GetProperty<string>(BookingHotelIdentityConsts.GoogleIdProperty) != googleInfo.Subject)
-        {
-            user.SetProperty(BookingHotelIdentityConsts.GoogleIdProperty, googleInfo.Subject);
-            await _userManager.UpdateAsync(user);
-        }
-
-        await _bruteForceManager.ResetCountersAsync(user);
-
-        var (token, expiresIn) = await _tokenGenerator.GenerateTokenAsync(user);
-
-        return new LoginResultDto
-        {
-            IsSuccess = true,
-            AccessToken = token,
-            ExpiresIn = expiresIn,
-            TokenType = "Bearer"
-        };
     }
 
     public async Task<RegisterStep1ResultDto> RegisterStep1Async(RegisterStep1InputDto input)
@@ -291,6 +342,9 @@ public class AuthAppService : ApplicationService, IAuthAppService
         }
 
         cacheItem.FullName = input.FullName;
+        cacheItem.UserName = !string.IsNullOrWhiteSpace(input.UserName)
+            ? GenerateUserNameFromFullName(input.UserName, cacheItem.Email)
+            : GenerateUserNameFromFullName(input.FullName, cacheItem.Email);
         cacheItem.CurrentStep = RegistrationStep.Step2Completed;
 
         await _registrationCache.SetAsync(
@@ -317,14 +371,34 @@ public class AuthAppService : ApplicationService, IAuthAppService
             throw new UserFriendlyException(L["Auth:EmailAlreadyExists"], BookingHotelAuthErrorCodes.EmailAlreadyExists);
         }
 
+        // Tự động chuyển đổi Họ và tên thành Tên đăng nhập (UserName) duy nhất
+        var baseUserName = !string.IsNullOrWhiteSpace(cacheItem.UserName)
+            ? GenerateUserNameFromFullName(cacheItem.UserName, cacheItem.Email)
+            : GenerateUserNameFromFullName(cacheItem.FullName ?? "", cacheItem.Email);
+
+        var uniqueUserName = await GenerateUniqueUserNameAsync(baseUserName);
+
         var user = new IdentityUser(
             GuidGenerator.Create(),
-            cacheItem.Email,
+            uniqueUserName,
             cacheItem.Email,
             CurrentTenant.Id
         );
 
-        user.Name = cacheItem.FullName;
+        if (!string.IsNullOrWhiteSpace(cacheItem.FullName))
+        {
+            var parts = cacheItem.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+            {
+                user.Name = parts[0];
+            }
+            else
+            {
+                user.Surname = parts[0];
+                user.Name = string.Join(" ", parts.Skip(1));
+            }
+        }
+
         user.SetPhoneNumber(input.PhoneNumber, false);
         user.SetProperty(BookingHotelIdentityConsts.FailedAttemptsInCurrentCycleProperty, 0);
         user.SetProperty(BookingHotelIdentityConsts.TotalFailedAttemptsProperty, 0);
@@ -376,8 +450,65 @@ public class AuthAppService : ApplicationService, IAuthAppService
             IsSuccess = true,
             AccessToken = token,
             ExpiresIn = expiresIn,
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            ShouldChangePassword = user.GetProperty<bool>(BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty)
         };
+    }
+
+    /// <summary>
+    /// Chuyển đổi Họ và tên (Tiếng Việt hoặc ký tự đặc biệt) thành Tên đăng nhập không dấu, viết thường, chuẩn ký tự an toàn
+    /// </summary>
+    public static string GenerateUserNameFromFullName(string? fullName, string fallbackEmail)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            var fallback = fallbackEmail.Split('@')[0];
+            return Regex.Replace(fallback, "[^a-zA-Z0-9]", "").ToLowerInvariant();
+        }
+
+        // 1. Chuyển đổi ký tự tiếng Việt có dấu thành không dấu chuẩn Unicode FormD
+        var normalizedString = fullName.Trim().Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        var clean = stringBuilder.ToString().Normalize(NormalizationForm.FormC);
+        clean = clean.Replace("đ", "d").Replace("Đ", "D");
+
+        // 2. Chỉ giữ lại ký tự a-z, 0-9
+        clean = Regex.Replace(clean, "[^a-zA-Z0-9]", "").ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(clean) || clean.Length < 2)
+        {
+            var emailPrefix = fallbackEmail.Split('@')[0];
+            clean = Regex.Replace(emailPrefix, "[^a-zA-Z0-9]", "").ToLowerInvariant();
+        }
+
+        return string.IsNullOrWhiteSpace(clean) ? "user" : clean;
+    }
+
+    /// <summary>
+    /// Đảm bảo Tên đăng nhập không bị trùng lặp trong hệ thống (tự động cộng đuôi số nếu cần)
+    /// </summary>
+    private async Task<string> GenerateUniqueUserNameAsync(string baseUserName)
+    {
+        var userName = baseUserName;
+        var counter = 1;
+
+        while (await _userManager.FindByNameAsync(userName) != null)
+        {
+            userName = $"{baseUserName}{counter}";
+            counter++;
+        }
+
+        return userName;
     }
 
     public async Task SendPasswordResetCodeAsync(ForgotPasswordInputDto input)
@@ -388,14 +519,26 @@ public class AuthAppService : ApplicationService, IAuthAppService
             throw new UserFriendlyException(L["Auth:InvalidCaptcha"], BookingHotelAuthErrorCodes.InvalidCaptcha);
         }
 
-        var user = await _userManager.FindByEmailAsync(input.Email);
+        IdentityUser? user = await _userManager.FindByEmailAsync(input.Email);
+        if (user == null)
+        {
+            using (DataFilter.Disable<IMultiTenant>())
+            {
+                user = await _userManager.FindByEmailAsync(input.Email);
+            }
+        }
+
         if (user == null)
         {
             // Trả về thành công ảo để chống brute force liệt kê email (Account Enumeration)
             return;
         }
 
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        string token;
+        using (CurrentTenant.Change(user.TenantId))
+        {
+            token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        }
 
         var resetLink = $"http://localhost:4200/auth/reset-password?userId={user.Id}&email={Uri.EscapeDataString(user.Email ?? "")}&token={Uri.EscapeDataString(token)}";
         var emailSubject = $"[Booking Hotel] {L["Auth:ResetPassword"].Value}";
@@ -564,25 +707,38 @@ public class AuthAppService : ApplicationService, IAuthAppService
 
     public async Task ResetPasswordAsync(ResetPasswordInputDto input)
     {
-        var user = await _userManager.FindByIdAsync(input.UserId);
+        IdentityUser? user = null;
+        using (DataFilter.Disable<IMultiTenant>())
+        {
+            user = await _userManager.FindByIdAsync(input.UserId);
+        }
+
         if (user == null)
         {
             throw new UserFriendlyException(L["Auth:InvalidResetToken"], BookingHotelAuthErrorCodes.InvalidResetToken);
         }
 
-        var result = await _userManager.ResetPasswordAsync(user, input.ResetToken, input.NewPassword);
-        if (!result.Succeeded)
+        using (CurrentTenant.Change(user.TenantId))
         {
-            throw new UserFriendlyException(L["Auth:InvalidResetToken"], BookingHotelAuthErrorCodes.InvalidResetToken);
-        }
+            var result = await _userManager.ResetPasswordAsync(user, input.ResetToken, input.NewPassword);
+            if (!result.Succeeded)
+            {
+                throw new UserFriendlyException(L["Auth:InvalidResetToken"], BookingHotelAuthErrorCodes.InvalidResetToken);
+            }
 
-        user.SetIsActive(true);
-        await _bruteForceManager.ResetCountersAsync(user);
+            user.SetIsActive(true);
+            await _bruteForceManager.ResetCountersAsync(user);
+        }
     }
 
     public async Task<ResetPasswordInfoDto> GetResetPasswordInfoAsync(Guid userId)
     {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
+        IdentityUser? user = null;
+        using (DataFilter.Disable<IMultiTenant>())
+        {
+            user = await _userManager.FindByIdAsync(userId.ToString());
+        }
+
         if (user == null || string.IsNullOrWhiteSpace(user.Email))
         {
             return new ResetPasswordInfoDto { Email = string.Empty, MaskedEmail = string.Empty };
@@ -643,5 +799,43 @@ public class AuthAppService : ApplicationService, IAuthAppService
             Action = "AdminUnlockedUser",
             UserName = user.UserName
         });
+    }
+
+    [Authorize]
+    public async Task<LoginResultDto> ChangePasswordAsync(ChangePasswordInputDto input)
+    {
+        var userId = CurrentUser.GetId();
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new EntityNotFoundException(typeof(IdentityUser), userId);
+        }
+
+        var changeResult = await _userManager.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword);
+        if (!changeResult.Succeeded)
+        {
+            var firstError = changeResult.Errors.FirstOrDefault()?.Description;
+            throw new UserFriendlyException(firstError ?? L["Auth:InvalidCredentialsDefault"]);
+        }
+
+        user.SetProperty(BookingHotelIdentityConsts.ShouldChangePasswordOnNextLoginProperty, false);
+        (await _userManager.UpdateAsync(user)).CheckErrors();
+
+        await _securityLogManager.SaveAsync(new IdentitySecurityLogContext
+        {
+            Identity = "Identity",
+            Action = "ChangePassword",
+            UserName = user.UserName
+        });
+
+        var (token, expiresIn) = await _tokenGenerator.GenerateTokenAsync(user);
+        return new LoginResultDto
+        {
+            IsSuccess = true,
+            AccessToken = token,
+            ExpiresIn = expiresIn,
+            TokenType = "Bearer",
+            ShouldChangePassword = false
+        };
     }
 }

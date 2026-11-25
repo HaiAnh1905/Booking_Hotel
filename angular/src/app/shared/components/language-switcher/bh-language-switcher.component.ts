@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SessionStateService } from '@abp/ng.core';
 import { LanguageOption } from '../../models/ui-models';
@@ -89,6 +89,20 @@ export class BhLanguageSwitcherComponent implements OnInit {
     this.isOpen.update(v => !v);
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Element | null;
+    if (!target || !target.closest) return;
+    if (!target.closest('.bh-lang-dropdown')) {
+      this.isOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.isOpen.set(false);
+  }
+
   selectLanguage(cultureName: string) {
     this.isOpen.set(false);
     localStorage.setItem('bh_selected_language', cultureName);
@@ -99,3 +113,4 @@ export class BhLanguageSwitcherComponent implements OnInit {
     }
   }
 }
+

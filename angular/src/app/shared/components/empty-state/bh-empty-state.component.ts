@@ -40,3 +40,4 @@ export class BhEmptyStateComponent {
   @Input() actionButtonKey?: string;
   @Output() action = new EventEmitter<void>();
 }
+

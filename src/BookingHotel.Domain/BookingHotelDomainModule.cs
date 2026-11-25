@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using BookingHotel.Localization;
@@ -42,6 +43,12 @@ public class BookingHotelDomainModule : AbpModule
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = MultiTenancyConsts.IsEnabled;
+        });
+
+        Configure<IdentityOptions>(options =>
+        {
+            // Cho phép người dùng tự do đặt Tên tài khoản (kể cả tiếng Việt, dấu cách, ký tự đặc biệt)
+            options.User.AllowedUserNameCharacters = null!;
         });
     }
 }

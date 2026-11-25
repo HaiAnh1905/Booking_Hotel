@@ -26,9 +26,13 @@
 - Áp dụng mô hình phản ứng (RxJS / Angular Signals) và Reactive Forms có validate phía client đồng bộ với quy tắc validation của Backend.
 - **Frontend thuần túy hiển thị (Thin Presentation Layer)**: Frontend chỉ đảm nhận thu thập tương tác từ người dùng và trình bày dữ liệu; tuyệt đối không tự tính toán tiền tệ hay tự chuyển đổi trạng thái dữ liệu để lưu vào hệ thống.
 
-### V. Đa Ngôn Ngữ (i18n) & Tính Toàn Vẹn Nghiệp Vụ
-- Tuyệt đối không hardcode chuỗi hiển thị, nhãn, thông báo lỗi trong code C# hay HTML. Tất cả phải định nghĩa thông qua file localization (`BookingHotelResource` ở backend và `vi.json` / `en.json` ở frontend).
-- Các quy tắc nghiệp vụ cốt lõi (ví dụ: logic tính tiền phòng, chuyển đổi trạng thái phòng, kiểm tra phòng trống) phải được viết unit test tại `BookingHotel.Domain.Tests`.
+### V. Đa Ngôn Ngữ (i18n), Cấm Tuyệt Đối Fixed Text & Tính Toàn Vẹn Nghiệp Vụ
+- **Cấm Tuyệt Đối Fixed Text (Zero Hardcoded / Fixed Text Policy)**:
+  - Tuyệt đối không được phép sử dụng bất kỳ chuỗi văn bản cứng (fixed text / hardcoded text) nào trong toàn bộ hệ thống (bao gồm tiêu đề trang, thẻ card, nhãn form label, placeholder, thông báo toastr / thông báo lỗi / xác nhận, văn bản modal, các nút tác vụ button, tooltip, tiêu chí checklist...).
+  - Mọi chuỗi hiển thị bắt buộc phải được truy xuất động dựa trên ngôn ngữ do người dùng lựa chọn thông qua cơ chế Localization của ABP Framework (`{{ 'Key' | abpLocalization }}` trong template HTML Angular hoặc `LocalizationService.instant('Key')` trong mã TypeScript; `L["Key"]` trong Backend C#).
+  - Khi thêm mới bất kỳ chuỗi hiển thị nào, **bắt buộc phải khai báo đầy đủ bản dịch tương ứng vào CẢ 2 FILE ngôn ngữ**: Tiếng Việt (`vi.json`) và Tiếng Anh (`en.json`) thuộc `BookingHotel.Domain.Shared` (nếu key đã tồn tại sẵn thì giữ nguyên không ghi đè).
+- **Tính Toàn Vẹn Nghiệp Vụ**:
+  - Các quy tắc nghiệp vụ cốt lõi (ví dụ: logic tính tiền phòng, chuyển đổi trạng thái phòng, kiểm tra phòng trống) phải được viết unit test tại `BookingHotel.Domain.Tests`.
 
 ### VI. Toàn Quyền Thay Đổi Dữ Liệu & Tính Toán Nghiệp Vụ Thuộc Về Backend (Backend-Authoritative)
 - **Mọi thao tác thay đổi dữ liệu (Create, Update, Delete) và chuyển đổi trạng thái (State Transition)**: Bắt buộc phải được kiểm soát và thực thi tại Backend (qua Domain Services / Aggregate Roots / AppServices). Frontend không được phép tự quyết định trạng thái dữ liệu.
@@ -71,6 +75,26 @@ Mọi giao diện Angular và stylesheet (SCSS) khi thiết kế hoặc sinh mã
   - Quá thời hạn 15 ngày, toàn bộ phiên đăng nhập và dữ liệu ghi nhớ bắt buộc phải tự động hết hiệu lực, yêu cầu người dùng xác thực lại từ đầu.
   - Trường hợp người dùng **không** nhấn Remember Me, phiên đăng nhập chỉ duy trì trong thời gian ngắn hạn (short-lived session, tối đa 2 giờ hoặc kết thúc khi đóng trình duyệt).
 
+### X. Tuyệt Đối Cấm Dựng Dữ Liệu Ảo (Zero Mock / Fake Data Policy)
+- **Cấm Tuyệt Đối Dữ Liệu Giả Lập & Mock Arrays**:
+  - Dừng toàn bộ việc tự ý dựng hoặc lưu hành dữ liệu ảo, dữ liệu giả lập (mock data, dummy data, fake metrics, fake lists, in-memory stub arrays) trong toàn bộ mã nguồn của hệ thống (bao gồm cả Backend C# và Frontend Angular).
+  - Không được phép hardcode các danh sách mẫu hoặc chỉ số giả lập trong Angular components/services hay API controllers để đối phó hoặc làm đẹp giao diện.
+- **100% Dữ Liệu Thực Từ CSDL (Real Database-Driven Data)**:
+  - Toàn bộ dữ liệu hiển thị trên giao diện người dùng (danh sách khách sạn, cơ sở, buồng phòng, sơ đồ phòng, đơn đặt phòng, nhân sự, vai trò, báo cáo doanh thu, chỉ số KPI, dashboard...) bắt buộc phải được truy xuất trực tiếp từ Cơ sở dữ liệu thật thông qua EF Core và AppService/API thực tế.
+- **Xử Lý Trạng Thái Trống Chuẩn Mực (Standard Empty State Handling)**:
+  - Tuyệt đối không được "chữa cháy" CSDL trống bằng cách gán mock array hay số liệu giả. Khi CSDL chưa có dữ liệu hoặc danh sách trả về rỗng (`0 items`), giao diện bắt buộc phải hiển thị trạng thái rỗng chuẩn (`Empty State / Common:NoData / bh-empty-state`) một cách rõ ràng, minh bạch cho người dùng biết để họ tiến hành thêm mới hoặc thiết lập cấu hình.
+- **Dữ Liệu Khởi Tạo & Môi Trường Phát Triển**:
+  - Nếu cần dữ liệu mẫu cho môi trường phát triển (development/testing), bắt buộc phải được tạo thông qua cơ chế Data Seeder chính thức (`*DataSeedContributor` trong tầng `Domain` hoặc `DbMigrator`) ghi vào CSDL, tuyệt đối không được gán cứng (hardcode) trong logic ứng dụng, service hoặc UI component.
+
+### XI. Quy Chuẩn Đánh Dấu Trường Dữ Liệu Bắt Buộc (Required Field UI Standard)
+- **Ký hiệu bắt buộc**: Mọi trường dữ liệu bắt buộc nhập (required input, select, textarea) trên toàn bộ hệ thống giao diện (Forms, Modals, Cài đặt, Đăng nhập, Đăng ký, Cấp quyền, Quản trị viên...) **bắt buộc phải hiển thị một dấu sao màu đỏ (`*`) ở cuối câu/nhãn (Label)**.
+- **Quy tắc hiển thị màu sắc & định dạng chữ (Zero Full-Red & Zero Bold Rule)**:
+  - **Chỉ duy nhất dấu sao `*` mang màu đỏ** (`#dc2626`). Toàn bộ chữ của nhãn (Label Text) phải giữ nguyên màu chữ thông thường của giao diện (màu tối tự nhiên `#1e293b`), tuyệt đối không được biến toàn bộ chữ của nhãn thành màu đỏ.
+  - **Không in đậm (Normal Weight)**: Nhãn trường và dấu sao không được in đậm (`font-weight: 500` hoặc `normal`, không dùng `font-weight: 700` hay `bold`).
+- **Quy chuẩn mã nguồn Frontend**:
+  - Cấu trúc nhãn chuẩn: `<label class="form-label">{{ 'Key' | abpLocalization }} <span class="text-danger">*</span></label>`.
+  - Bộ định kiểu toàn cục (`src/styles.scss`) áp dụng `color: #dc2626; font-weight: normal;` riêng biệt cho dấu sao và bảo toàn màu chữ của label.
+
 ## Ràng Buộc Công Nghệ & Hạ Tầng
 
 - **Backend**: .NET 10, ABP Framework (v10.7+), Entity Framework Core.
@@ -98,4 +122,4 @@ Mọi giao diện Angular và stylesheet (SCSS) khi thiết kế hoặc sinh mã
 - Mọi trợ lý AI và lập trình viên khi đề xuất giải pháp, lập kế hoạch hay sinh code đều bắt buộc tuân thủ các điều khoản trên.
 - Mọi thay đổi hay bổ sung Hiến pháp cần có sự phê duyệt của Tech Lead, có lý do rõ ràng và phải nâng số phiên bản của Hiến pháp (theo chuẩn SemVer).
 
-**Phiên bản**: 1.4.0 | **Phê duyệt**: 2026-11-11 | **Cập nhật lần cuối**: 2026-11-11
+**Phiên bản**: 1.6.0 | **Phê duyệt**: 2026-11-18 | **Cập nhật lần cuối**: 2026-11-18

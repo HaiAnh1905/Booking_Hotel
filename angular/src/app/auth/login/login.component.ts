@@ -2,10 +2,11 @@ import { AfterViewInit, Component, OnDestroy, OnInit, inject, ChangeDetectorRef 
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService, ConfigStateService, LocalizationPipe } from '@abp/ng.core';
+import { AuthService, ConfigStateService, LocalizationPipe, LocalizationService } from '@abp/ng.core';
 import { OAuthStorage } from 'angular-oauth2-oidc';
 import { environment } from '../../../environments/environment';
 import { AuthProxyService, LoginResultDto } from '../services/auth-proxy.service';
+import { getDefaultUrlForRoles, getUserRoles, getUserTenantId } from '../../admin/guards/role-based-redirect.guard';
 
 declare const google: any;
 
@@ -24,6 +25,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   private oAuthStorage = inject(OAuthStorage);
   private configState = inject(ConfigStateService);
   private authService = inject(AuthService);
+  private localization = inject(LocalizationService);
   private cdr = inject(ChangeDetectorRef);
 
   loginForm!: FormGroup;
@@ -44,11 +46,13 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   private isRemembered = false;
 
   ngOnInit(): void {
-    // Nếu người dùng đã đăng nhập thành công trước đó thì buộc chuyển hướng về trang chủ
+    // Nếu người dùng đã đăng nhập thành công trước đó thì chuyển hướng về trang chính tương ứng của họ
     const token = this.oAuthStorage.getItem('access_token');
     const hasAccessToken = !!token && token !== 'undefined' && token !== 'null';
     if (this.authService.isAuthenticated || hasAccessToken) {
-      this.router.navigate(['/']);
+      const roles = getUserRoles(this.oAuthStorage, this.configState);
+      const targetUrl = getDefaultUrlForRoles(roles);
+      this.router.navigateByUrl(targetUrl);
       return;
     }
 
@@ -76,7 +80,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.loginForm = this.fb.group({
-      email: [initialEmail, [Validators.required, Validators.email]],
+      email: [initialEmail, [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [initialRememberMe]
     });
@@ -122,29 +126,31 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (res.isDeactivated) {
           this.isDeactivated = true;
-          this.errorMessage = res.message || 'Tài khoản đã bị vô hiệu hóa.';
+          this.loginForm.disable();
+          this.errorMessage = res.message || this.localization.instant('Auth:AccountDeactivatedAlert');
           this.cdr.detectChanges();
           return;
         }
 
         if (res.isLockedOut && res.remainingLockoutSeconds) {
           this.isLockedOut = true;
+          this.loginForm.disable();
           this.startLockoutCountdown(res.remainingLockoutSeconds);
-          this.errorMessage = res.message || 'Tài khoản đang bị tạm khóa.';
+          this.errorMessage = res.message || this.localization.instant('Auth:AccountLockedAlert');
           this.cdr.detectChanges();
           return;
         }
 
         if (res.remainingAttemptsInCycle !== undefined && res.remainingAttemptsInCycle !== null) {
-          this.warningMessage = res.message || `Mật khẩu không chính xác. Bạn còn ${res.remainingAttemptsInCycle} lần thử.`;
+          this.warningMessage = res.message || this.localization.instant('Auth:PasswordIncorrectAttempts', res.remainingAttemptsInCycle + '');
         } else {
-          this.errorMessage = res.message || 'Đăng nhập không thành công.';
+          this.errorMessage = res.message || this.localization.instant('Auth:LoginFailed');
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Có lỗi xảy ra trong quá trình đăng nhập.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:LoginGeneralError');
         this.cdr.detectChanges();
       }
     });
@@ -176,7 +182,11 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           this.isGoogleLoaded = true;
           this.cdr.detectChanges();
         }
-        google.accounts.id.prompt();
+        google.accounts.id.prompt((notification: any) => {
+          if (notification && (notification.isNotDisplayed() || notification.isSkippedMoment())) {
+            // FedCM / One Tap silently handled if prompt is not displayed or skipped
+          }
+        });
       } else if (attempts < 25) {
         attempts++;
         setTimeout(checkGsi, 200);
@@ -216,13 +226,13 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
             });
           }
         } else {
-          this.errorMessage = res.message || 'Đăng nhập Google thất bại.';
+          this.errorMessage = res.message || this.localization.instant('Auth:GoogleLoginFailed');
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error?.message || 'Đăng nhập Google thất bại.';
+        this.errorMessage = err?.error?.error?.message || this.localization.instant('Auth:GoogleLoginFailed');
         this.cdr.detectChanges();
       }
     });
@@ -246,8 +256,10 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
         savedAt: Date.now()
       };
       localStorage.setItem(this.REMEMBER_ME_STORAGE_KEY, JSON.stringify(rememberData));
+      localStorage.setItem('remember_me', 'true');
     } else {
       localStorage.removeItem(this.REMEMBER_ME_STORAGE_KEY);
+      localStorage.setItem('remember_me', 'false');
     }
 
     // 1. Lưu token vào OAuthStorage và localStorage đồng thời
@@ -264,13 +276,19 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // 2. Kích hoạt cập nhật ứng dụng tức thời (User claims, avatar, permissions) mà không reload trang
-    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    const requestedReturnUrl = this.route.snapshot.queryParams['returnUrl'];
     this.configState.refreshAppState().subscribe({
       next: () => {
-        this.router.navigateByUrl(returnUrl);
+        const tenantId = getUserTenantId(this.oAuthStorage, this.configState);
+        const roles = getUserRoles(this.oAuthStorage, this.configState);
+        const targetUrl = getDefaultUrlForRoles(roles, requestedReturnUrl, !!tenantId);
+        this.router.navigateByUrl(targetUrl);
       },
       error: () => {
-        this.router.navigateByUrl(returnUrl);
+        const tenantId = getUserTenantId(this.oAuthStorage, this.configState);
+        const roles = getUserRoles(this.oAuthStorage, this.configState);
+        const targetUrl = getDefaultUrlForRoles(roles, requestedReturnUrl, !!tenantId);
+        this.router.navigateByUrl(targetUrl);
       }
     });
   }
@@ -282,6 +300,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       this.lockoutRemainingSeconds--;
       if (this.lockoutRemainingSeconds <= 0) {
         this.isLockedOut = false;
+        this.loginForm.enable();
         this.errorMessage = '';
         this.clearLockoutTimer();
       }

@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LocalizationPipe } from '@abp/ng.core';
 import { BhModalConfig } from '../../models/ui-models';
@@ -78,7 +88,10 @@ import { BhModalConfig } from '../../models/ui-models';
   styleUrls: ['./bh-modal.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BhModalComponent {
+export class BhModalComponent implements OnChanges, OnDestroy {
+  private static openModalCount = 0;
+  private wasOpen = false;
+
   @Input() isOpen: boolean = false;
   @Input() config: BhModalConfig = { titleKey: 'Common:Confirm' };
   @Input() busy: boolean = false;
@@ -86,6 +99,40 @@ export class BhModalComponent {
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
   @Output() isOpenChange = new EventEmitter<boolean>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isOpen']) {
+      this.syncBodyScrollLock();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.wasOpen) {
+      this.wasOpen = false;
+      BhModalComponent.openModalCount = Math.max(0, BhModalComponent.openModalCount - 1);
+      if (BhModalComponent.openModalCount === 0 && typeof document !== 'undefined') {
+        document.body.classList.remove('bh-modal-open');
+      }
+    }
+  }
+
+  private syncBodyScrollLock(): void {
+    if (typeof document === 'undefined') return;
+
+    if (this.isOpen && !this.wasOpen) {
+      this.wasOpen = true;
+      BhModalComponent.openModalCount++;
+      if (BhModalComponent.openModalCount === 1) {
+        document.body.classList.add('bh-modal-open');
+      }
+    } else if (!this.isOpen && this.wasOpen) {
+      this.wasOpen = false;
+      BhModalComponent.openModalCount = Math.max(0, BhModalComponent.openModalCount - 1);
+      if (BhModalComponent.openModalCount === 0) {
+        document.body.classList.remove('bh-modal-open');
+      }
+    }
+  }
 
   @HostListener('document:keydown.escape')
   handleEscape() {
@@ -95,13 +142,20 @@ export class BhModalComponent {
   }
 
   onBackdropClick(event: MouseEvent) {
-    if (!this.busy) {
-      this.onCancel();
+    if (this.busy) return;
+
+    // Không đóng modal nếu người dùng click hoặc kéo thanh cuộn của backdrop (vùng cuộn bên phải)
+    const target = event.target as HTMLElement;
+    if (target && event.clientX >= target.clientWidth) {
+      return;
     }
+
+    this.onCancel();
   }
 
   onCancel() {
     this.isOpen = false;
+    this.syncBodyScrollLock();
     this.isOpenChange.emit(false);
     this.cancel.emit();
   }
@@ -125,3 +179,4 @@ export class BhModalComponent {
     }
   }
 }
+
